@@ -1,0 +1,90 @@
+{
+  "kind": "coverage_report",
+  "version": "1.0",
+  "generatedAt": "2026-02-09T02:09:40.840Z",
+  "sources": {
+    "buildRequest": true,
+    "implementationPlan": true
+  },
+  "requirements": {
+    "total": 4,
+    "implemented": 4,
+    "items": [
+      {
+        "id": "REQ-29",
+        "summary": "Improve user-facing error handling for backend call failures that return 'Reject code: 5' / 'IC0508' / 'Canister … is stopped' so the UI shows a clear English explanation and next steps instead of the raw replica rejection payload.",
+        "status": "implemented",
+        "plannedFiles": [
+          "frontend/src/utils/backendErrorMessages.ts",
+          "frontend/src/components/keys/ProviderKeyManager.tsx",
+          "frontend/src/components/chat/ChatbotCommandCenter.tsx"
+        ],
+        "matchedFiles": [
+          "frontend/src/utils/backendErrorMessages.ts",
+          "frontend/src/components/keys/ProviderKeyManager.tsx",
+          "frontend/src/components/chat/ChatbotCommandCenter.tsx"
+        ]
+      },
+      {
+        "id": "REQ-30",
+        "summary": "Update ProviderKeyManager to classify and display backend errors from the save mutation in a user-friendly way, including a dedicated handling path for IC0508/Reject code 5 errors, and to keep the user in a recoverable state (no stuck spinners, actionable retry guidance).",
+        "status": "implemented",
+        "plannedFiles": [
+          "frontend/src/components/keys/ProviderKeyManager.tsx",
+          "frontend/src/hooks/keys/useProviderKey.ts"
+        ],
+        "matchedFiles": [
+          "frontend/src/components/keys/ProviderKeyManager.tsx",
+          "frontend/src/hooks/keys/useProviderKey.ts"
+        ]
+      },
+      {
+        "id": "REQ-31",
+        "summary": "Extend BackendConnectionAlert to recognize and explain the 'canister stopped' class of errors (IC0508 / Reject code: 5) with tailored English guidance, and ensure it remains usable for both authenticated and unauthenticated states.",
+        "status": "implemented",
+        "plannedFiles": [
+          "frontend/src/components/common/BackendConnectionAlert.tsx",
+          "frontend/src/utils/backendErrorMessages.ts"
+        ],
+        "matchedFiles": [
+          "frontend/src/components/common/BackendConnectionAlert.tsx",
+          "frontend/src/utils/backendErrorMessages.ts"
+        ]
+      },
+      {
+        "id": "REQ-32",
+        "summary": "Ensure all actor-dependent provider flows are gated on the existing useBackendActor readiness signals (isReady / isConnecting) so the UI never attempts provider-key mutations or provider-chat mutations while still connecting, and surfaces the 'Still connecting to the backend…' message instead.",
+        "status": "implemented",
+        "plannedFiles": [
+          "frontend/src/hooks/chat/useProviderChat.ts",
+          "frontend/src/components/chat/ChatbotCommandCenter.tsx",
+          "frontend/src/components/keys/ProviderKeyManager.tsx",
+          "frontend/src/components/providers/ProviderActionGuard.tsx"
+        ],
+        "matchedFiles": [
+          "frontend/src/hooks/chat/useProviderChat.ts",
+          "frontend/src/components/chat/ChatbotCommandCenter.tsx",
+          "frontend/src/components/keys/ProviderKeyManager.tsx",
+          "frontend/src/components/providers/ProviderActionGuard.tsx"
+        ]
+      }
+    ]
+  },
+  "changedFiles": [
+    "build-request.json",
+    "feature_evidence.json",
+    "frontend-file-summaries.txt",
+    "frontend-implementation-plan.json",
+    "frontend/src/components/chat/ChatbotCommandCenter.tsx",
+    "frontend/src/components/common/BackendConnectionAlert.tsx",
+    "frontend/src/components/keys/ProviderKeyManager.tsx",
+    "frontend/src/components/providers/ProviderActionGuard.tsx",
+    "frontend/src/hooks/chat/useProviderChat.ts",
+    "frontend/src/hooks/keys/useProviderKey.ts",
+    "frontend/src/utils/backendErrorMessages.ts",
+    "project_state.json",
+    "scratch/component-selection.json",
+    "spec.md",
+    "spec_vs_diff_report.json"
+  ]
+}

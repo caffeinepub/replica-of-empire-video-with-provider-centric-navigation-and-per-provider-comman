@@ -1,0 +1,96 @@
+{
+  "kind": "feature_evidence_report",
+  "features": [
+    {
+      "featureId": "feature-improve-user-facing-error-handling-for-backend-call-failures-that-return-reject-code-5-ic0508-canister-is-stopped-so-the-ui-shows-a-clear-english-explanation-and-next-steps-instead-of-the-raw-replica-rejection-payload",
+      "featureTitle": "Improve user-facing error handling for backend call failures that return 'Reject code: 5' / 'IC0508' / 'Canister … is stopped' so the UI shows a clear English explanation and next steps instead of the raw replica rejection payload.",
+      "files": [
+        "frontend/src/components/chat/ChatbotCommandCenter.tsx",
+        "frontend/src/components/keys/ProviderKeyManager.tsx",
+        "frontend/src/utils/backendErrorMessages.ts"
+      ],
+      "components": [
+        "authorization@4.0.0",
+        "blob-storage@4.0.0",
+        "http-outcalls@3.0.0",
+        "core-infrastructure@1.0.2",
+        "shadcn-ui@1.0.0",
+        "build-template-react@1.0.0",
+        "initial-app@1.0.0",
+        "github-export-icp-cli@1.0.0"
+      ],
+      "testIds": [
+        "REQ-29"
+      ],
+      "confidence": "high"
+    },
+    {
+      "featureId": "feature-update-providerkeymanager-to-classify-and-display-backend-errors-from-the-save-mutation-in-a-user-friendly-way-including-a-dedicated-handling-path-for-ic0508-reject-code-5-errors-and-to-keep-the-user-in-a-recoverable-state-no-stuck-spinners-actionable-retry-guidance",
+      "featureTitle": "Update ProviderKeyManager to classify and display backend errors from the save mutation in a user-friendly way, including a dedicated handling path for IC0508/Reject code 5 errors, and to keep the user in a recoverable state (no stuck spinners, actionable retry guidance).",
+      "files": [
+        "frontend/src/components/keys/ProviderKeyManager.tsx",
+        "frontend/src/hooks/keys/useProviderKey.ts"
+      ],
+      "components": [
+        "authorization@4.0.0",
+        "blob-storage@4.0.0",
+        "http-outcalls@3.0.0",
+        "core-infrastructure@1.0.2",
+        "shadcn-ui@1.0.0",
+        "build-template-react@1.0.0",
+        "initial-app@1.0.0",
+        "github-export-icp-cli@1.0.0"
+      ],
+      "testIds": [
+        "REQ-30"
+      ],
+      "confidence": "high"
+    },
+    {
+      "featureId": "feature-extend-backendconnectionalert-to-recognize-and-explain-the-canister-stopped-class-of-errors-ic0508-reject-code-5-with-tailored-english-guidance-and-ensure-it-remains-usable-for-both-authenticated-and-unauthenticated-states",
+      "featureTitle": "Extend BackendConnectionAlert to recognize and explain the 'canister stopped' class of errors (IC0508 / Reject code: 5) with tailored English guidance, and ensure it remains usable for both authenticated and unauthenticated states.",
+      "files": [
+        "frontend/src/components/common/BackendConnectionAlert.tsx",
+        "frontend/src/utils/backendErrorMessages.ts"
+      ],
+      "components": [
+        "authorization@4.0.0",
+        "blob-storage@4.0.0",
+        "http-outcalls@3.0.0",
+        "core-infrastructure@1.0.2",
+        "shadcn-ui@1.0.0",
+        "build-template-react@1.0.0",
+        "initial-app@1.0.0",
+        "github-export-icp-cli@1.0.0"
+      ],
+      "testIds": [
+        "REQ-31"
+      ],
+      "confidence": "high"
+    },
+    {
+      "featureId": "feature-ensure-all-actor-dependent-provider-flows-are-gated-on-the-existing-usebackendactor-readiness-signals-isready-isconnecting-so-the-ui-never-attempts-provider-key-mutations-or-provider-chat-mutations-while-still-connecting-and-surfaces-the-still-connecting-to-the-backend-message-instead",
+      "featureTitle": "Ensure all actor-dependent provider flows are gated on the existing useBackendActor readiness signals (isReady / isConnecting) so the UI never attempts provider-key mutations or provider-chat mutations while still connecting, and surfaces the 'Still connecting to the backend…' message instead.",
+      "files": [
+        "frontend/src/components/chat/ChatbotCommandCenter.tsx",
+        "frontend/src/components/keys/ProviderKeyManager.tsx",
+        "frontend/src/components/providers/ProviderActionGuard.tsx",
+        "frontend/src/hooks/chat/useProviderChat.ts"
+      ],
+      "components": [
+        "authorization@4.0.0",
+        "blob-storage@4.0.0",
+        "http-outcalls@3.0.0",
+        "core-infrastructure@1.0.2",
+        "shadcn-ui@1.0.0",
+        "build-template-react@1.0.0",
+        "initial-app@1.0.0",
+        "github-export-icp-cli@1.0.0"
+      ],
+      "testIds": [
+        "REQ-32"
+      ],
+      "confidence": "high"
+    }
+  ]
+}

@@ -1,0 +1,330 @@
+{
+  "schemaVersion": "1.0.0",
+  "projectStateVersion": 15,
+  "summary": "Replica of the Empire Video+ app, extended with a provider-centric UI where each AI provider has its own dedicated page with its own chatbot/command box and provider-specific options/workflows tailored to that provider’s capabilities (e.g., app-building vs video generation), including recommended prompts.",
+  "architectural_notes": [
+    "Adopt a provider-module architecture (routing + UI + services per provider) so each provider page can be isolated while sharing common components.",
+    "Persist chatbot context/history per provider (separate storage namespaces/keys per provider) to prevent cross-provider context mixing.",
+    "Provider registry should be data-driven and support both fixed providers and user-configurable custom slots (name + key) as first-class entries.",
+    "Each provider page should include a capability summary/list specific to that provider (even if initially static/placeholder).",
+    "Make provider pages capability-driven: render provider-specific UI modules/workflows (e.g., app builder, video generator) based on provider capability metadata rather than a one-size-fits-all page.",
+    "Maintain a per-provider library of recommended prompt templates tied to capabilities and surface them contextually on each provider page."
+  ],
+  "known_issues": [
+    "Fal.ai provider is not working (provider page/flow failing to function as expected).",
+    "Fal.ai upload/action fails with error \"Actor is not available\" when trying to use/upload with Fal.ai key.",
+    "Fal.ai key save can fail when backend canister is stopped (Reject code 5 / IC0508), causing 'Actor is not available' errors until actor/canister is running."
+  ],
+  "isFixRequest": true,
+  "existing_features": [
+    {
+      "id": "feature-create-a-provider-hub-navigation-ui-that-lists-all-supported-ai-api-providers-in-a-tabboard-or-vertical-tab-list-selecting-a-provider-must-navigate-to-that-provider-s-dedicated-page",
+      "title": "Create a provider hub navigation UI that lists all supported AI/API providers in a tabboard (or vertical tab list). Selecting a provider must navigate to that provider’s dedicated page.",
+      "reqIds": [
+        "REQ-1"
+      ],
+      "version": 1
+    },
+    {
+      "id": "feature-define-and-display-a-concrete-default-list-of-ai-api-providers-to-include-in-the-provider-hub-at-minimum-including-openai-ltx-replicate-runpod-slack-the-provider-list-must-be-data-driven-single-source-of-truth-so-adding-removing-providers-does-not-require-editing-multiple-ui-files",
+      "title": "Define and display a concrete default list of AI/API providers to include in the provider hub, at minimum including: OpenAI, LTX, Replicate, RunPod, Slack. The provider list must be data-driven (single source of truth) so adding/removing providers does not require editing multiple UI files.",
+      "reqIds": [
+        "REQ-2"
+      ],
+      "version": 1
+    },
+    {
+      "id": "feature-implement-a-dedicated-page-for-each-provider-openai-page-ltx-page-replicate-page-runpod-page-slack-page-each-provider-page-must-operate-only-that-provider-s-tools-flows-and-must-not-show-controls-that-are-specific-to-other-providers",
+      "title": "Implement a dedicated page for each provider (OpenAI page, LTX page, Replicate page, RunPod page, Slack page). Each provider page must operate only that provider’s tools/flows and must not show controls that are specific to other providers.",
+      "reqIds": [
+        "REQ-3"
+      ],
+      "version": 1
+    },
+    {
+      "id": "feature-add-a-per-provider-chatbot-command-center-on-each-provider-page-the-chatbot-must-maintain-isolated-conversation-context-history-per-provider-e-g-openai-chat-history-does-not-appear-on-ltx-page",
+      "title": "Add a per-provider “Chatbot Command Center” on each provider page. The chatbot must maintain isolated conversation context/history per provider (e.g., OpenAI chat history does not appear on LTX page).",
+      "reqIds": [
+        "REQ-4"
+      ],
+      "version": 1
+    },
+    {
+      "id": "feature-implement-per-provider-api-key-management-so-each-provider-page-can-view-add-update-its-own-api-key-and-usage-on-that-page-uses-only-that-provider-s-key-keys-must-be-stored-per-authenticated-user-and-must-not-be-exposed-in-the-ui-beyond-entry-edit-views",
+      "title": "Implement per-provider API key management so each provider page can view/add/update its own API key, and usage on that page uses only that provider’s key. Keys must be stored per authenticated user and must not be exposed in the UI beyond entry/edit views.",
+      "reqIds": [
+        "REQ-5"
+      ],
+      "version": 1
+    },
+    {
+      "id": "feature-replicate-the-described-empire-video-functional-areas-as-a-baseline-while-adapting-the-ui-to-the-provider-centric-layout-authentication-user-system-key-vault-ai-asset-generation-flows-assistant-chat-memory-brain-studio-tools-motion-brush-magic-script-history-gallery-admin-panel-links-dashboard-where-a-capability-was-previously-stubbed-coming-soon-keep-it-visibly-labeled-as-unavailable-rather-than-silently-failing",
+      "title": "Replicate the described “Empire Video+” functional areas (as a baseline) while adapting the UI to the provider-centric layout: Authentication & user system; key vault; AI asset generation flows; assistant chat; memory/brain; studio tools (motion brush, magic script, history gallery); admin panel; links dashboard. Where a capability was previously stubbed/coming-soon, keep it visibly labeled as unavailable rather than silently failing.",
+      "reqIds": [
+        "REQ-6"
+      ],
+      "version": 1
+    },
+    {
+      "id": "feature-apply-a-coherent-visual-theme-across-the-app-colors-typography-layout-spacing-appropriate-for-an-ai-command-center-product-avoiding-a-blue-purple-dominant-palette-the-theme-must-be-used-consistently-across-provider-hub-provider-pages-chat-and-dashboards",
+      "title": "Apply a coherent visual theme across the app (colors, typography, layout, spacing) appropriate for an “AI command center” product, avoiding a blue/purple-dominant palette. The theme must be used consistently across provider hub, provider pages, chat, and dashboards.",
+      "reqIds": [
+        "REQ-7"
+      ],
+      "version": 1
+    },
+    {
+      "id": "feature-make-the-global-app-layout-responsive-on-small-screens-by-replacing-the-always-visible-left-provider-sidebar-with-a-mobile-friendly-pattern-collapsed-by-default-while-keeping-the-existing-desktop-sidebar-behavior",
+      "title": "Make the global app layout responsive on small screens by replacing the always-visible left provider sidebar with a mobile-friendly pattern (collapsed by default) while keeping the existing desktop sidebar behavior.",
+      "reqIds": [
+        "REQ-8"
+      ],
+      "version": 1
+    },
+    {
+      "id": "feature-update-the-topnav-to-be-mobile-responsive-prevent-horizontal-overflow-ensure-primary-navigation-remains-usable-on-small-screens-and-keep-authentication-controls-accessible",
+      "title": "Update the TopNav to be mobile responsive: prevent horizontal overflow, ensure primary navigation remains usable on small screens, and keep authentication controls accessible.",
+      "reqIds": [
+        "REQ-9"
+      ],
+      "version": 1
+    },
+    {
+      "id": "feature-improve-mobile-responsiveness-of-page-layouts-that-use-fixed-containers-and-grids-providerhubpage-keyvaultpage-provider-pages-by-adjusting-padding-typography-scale-and-grid-breakpoints-for-small-screens",
+      "title": "Improve mobile responsiveness of page layouts that use fixed containers and grids (ProviderHubPage, KeyVaultPage, provider pages) by adjusting padding, typography scale, and grid breakpoints for small screens.",
+      "reqIds": [
+        "REQ-10"
+      ],
+      "version": 1
+    },
+    {
+      "id": "feature-make-chatbotcommandcenter-usable-on-mobile-by-removing-the-fixed-600px-height-on-small-screens-ensuring-the-message-list-and-composer-behave-well-with-the-on-screen-keyboard-and-improving-touch-target-ergonomics",
+      "title": "Make ChatbotCommandCenter usable on mobile by removing the fixed 600px height on small screens, ensuring the message list and composer behave well with the on-screen keyboard, and improving touch-target ergonomics.",
+      "reqIds": [
+        "REQ-11"
+      ],
+      "version": 1
+    },
+    {
+      "id": "feature-ensure-key-management-ui-providerkeymanager-is-mobile-friendly-inputs-and-buttons-fit-narrow-widths-button-rows-wrap-stack-appropriately-and-form-spacing-is-optimized-for-touch",
+      "title": "Ensure key management UI (ProviderKeyManager) is mobile-friendly: inputs and buttons fit narrow widths, button rows wrap/stack appropriately, and form spacing is optimized for touch.",
+      "reqIds": [
+        "REQ-12"
+      ],
+      "version": 1
+    },
+    {
+      "id": "feature-expand-the-single-source-of-truth-provider-list-to-include-all-user-requested-providers-and-ensure-they-appear-everywhere-providers-are-listed-provider-hub-key-vault-desktop-provider-nav-mobile-provider-nav-providers-to-add-gemini-runway-pika-luma-kling-hailuo-stability-ai-fal-ai-modelscope-leonardo-ai-synthesia-tiktok-shopify-shopify-shop-url-custom-slot-1-custom-slot-2-in-addition-to-existing-replicate-openai-runpod-ltx-slack",
+      "title": "Expand the single source-of-truth provider list to include all user-requested providers and ensure they appear everywhere providers are listed (Provider Hub, Key Vault, desktop provider nav, mobile provider nav). Providers to add: Gemini, Runway, Pika, Luma, Kling, Hailuo, Stability AI, Fal.ai, ModelScope, Leonardo AI, Synthesia, TikTok, Shopify, Shopify Shop URL, Custom Slot 1, Custom Slot 2 (in addition to existing Replicate, OpenAI, RunPod, LTX, Slack).",
+      "reqIds": [
+        "REQ-13"
+      ],
+      "version": 1
+    },
+    {
+      "id": "feature-add-a-dedicated-route-and-page-for-each-newly-added-provider-each-provider-page-must-display-the-provider-name-description-and-a-visible-list-of-capabilities-for-that-provider-and-must-be-reachable-by-clicking-the-provider-from-provider-hub-and-from-the-provider-navigation",
+      "title": "Add a dedicated route and page for each newly added provider. Each provider page must display the provider name, description, and a visible list of capabilities for that provider, and must be reachable by clicking the provider from Provider Hub and from the provider navigation.",
+      "reqIds": [
+        "REQ-14"
+      ],
+      "version": 1
+    },
+    {
+      "id": "feature-add-two-configurable-custom-provider-slots-custom-slot-1-and-custom-slot-2-that-support-both-a-user-editable-display-name-and-a-key-value-within-the-key-management-ui-the-key-vault-provider-pages-must-use-the-saved-custom-display-name-when-present-anywhere-the-provider-is-shown-for-that-custom-slot",
+      "title": "Add two configurable custom provider slots (Custom Slot 1 and Custom Slot 2) that support BOTH a user-editable display name and a key value within the key management UI. The key vault/provider pages must use the saved custom display name (when present) anywhere the provider is shown for that custom slot.",
+      "reqIds": [
+        "REQ-15"
+      ],
+      "version": 1
+    },
+    {
+      "id": "feature-support-provider-specific-credential-field-labeling-for-providers-that-are-not-strictly-api-keys-specifically-add-a-provider-entry-for-shopify-shop-url-whose-key-credential-input-is-labeled-shop-url-and-accepts-a-url-like-value-text-input-is-acceptable",
+      "title": "Support provider-specific credential field labeling for providers that are not strictly “API keys”, specifically: add a provider entry for “Shopify Shop URL” whose key/credential input is labeled “Shop URL” and accepts a URL-like value (text input is acceptable).",
+      "reqIds": [
+        "REQ-16"
+      ],
+      "version": 1
+    },
+    {
+      "id": "feature-wire-frontend-data-flow-for-custom-slot-display-names-using-react-query-so-that-setting-a-custom-slot-name-updates-all-relevant-ui-provider-cards-nav-provider-page-header-without-requiring-a-full-reload",
+      "title": "Wire frontend data flow for custom slot display names using React Query so that setting a custom slot name updates all relevant UI (provider cards, nav, provider page header) without requiring a full reload.",
+      "reqIds": [
+        "REQ-18"
+      ],
+      "version": 1
+    },
+    {
+      "id": "feature-add-provider-specific-workflow-configuration-to-the-single-source-of-truth-provider-registry-so-each-provider-can-declare-a-a-workflow-type-e-g-app-building-video-generation-image-generation-chat-integration-b-the-provider-specific-option-fields-to-show-on-its-page-and-c-a-set-of-recommended-prompt-templates-for-that-provider",
+      "title": "Add provider-specific workflow configuration to the single source-of-truth provider registry so each provider can declare: (a) a workflow type (e.g., app building, video generation, image generation, chat/integration), (b) the provider-specific option fields to show on its page, and (c) a set of recommended prompt templates for that provider.",
+      "reqIds": [
+        "REQ-19"
+      ],
+      "version": 1
+    },
+    {
+      "id": "feature-implement-a-reusable-recommended-prompts-ui-on-provider-pages-that-lists-the-provider-s-recommended-prompt-templates-and-allows-users-to-insert-a-selected-template-into-that-provider-s-command-box-input-for-quick-sending-editing",
+      "title": "Implement a reusable “Recommended Prompts” UI on provider pages that lists the provider’s recommended prompt templates and allows users to insert a selected template into that provider’s command box input for quick sending/editing.",
+      "reqIds": [
+        "REQ-20"
+      ],
+      "version": 1
+    },
+    {
+      "id": "feature-add-capability-driven-provider-tools-options-sections-to-provider-pages-so-that-the-page-layout-and-visible-options-match-what-that-provider-is-capable-of-doing-e-g-app-building-setup-vs-video-generation-setup-while-keeping-a-visible-not-integrated-yet-callout-where-real-provider-execution-is-not-implemented",
+      "title": "Add capability-driven “Provider Tools/Options” sections to provider pages so that the page layout and visible options match what that provider is capable of doing (e.g., app-building setup vs. video-generation setup), while keeping a visible “Not integrated yet” callout where real provider execution is not implemented.",
+      "reqIds": [
+        "REQ-21"
+      ],
+      "version": 1
+    },
+    {
+      "id": "feature-ensure-the-generic-provider-route-providers-providerid-renders-the-same-capability-driven-command-box-recommended-prompts-provider-tools-options-as-dedicated-provider-pages-so-newly-added-providers-automatically-get-an-appropriate-page-experience-without-requiring-a-bespoke-page-file",
+      "title": "Ensure the generic provider route (/providers/$providerId) renders the same capability-driven command box + recommended prompts + provider tools/options as dedicated provider pages, so newly added providers automatically get an appropriate page experience without requiring a bespoke page file.",
+      "reqIds": [
+        "REQ-22"
+      ],
+      "version": 1
+    },
+    {
+      "id": "feature-diagnose-and-fix-the-fal-ai-provider-experience-so-that-navigating-to-fal-ai-reliably-renders-a-working-provider-page-genericproviderpage-including-key-management-recommended-prompts-if-configured-chat-history-and-provider-tools-options-without-runtime-errors",
+      "title": "Diagnose and fix the Fal.ai provider experience so that navigating to Fal.ai reliably renders a working provider page (GenericProviderPage), including key management, recommended prompts (if configured), chat history, and provider tools/options without runtime errors.",
+      "reqIds": [
+        "REQ-23"
+      ],
+      "version": 1
+    },
+    {
+      "id": "feature-add-a-route-alias-so-that-the-common-shorthand-path-providers-fal-navigates-to-the-existing-fal-ai-provider-route-providers-fal-ai-without-changing-the-provider-registry-ids",
+      "title": "Add a route alias so that the common shorthand path \"/providers/fal\" navigates to the existing Fal.ai provider route \"/providers/fal-ai\" (without changing the provider registry IDs).",
+      "reqIds": [
+        "REQ-24"
+      ],
+      "version": 1
+    },
+    {
+      "id": "feature-improve-user-facing-error-handling-on-genericproviderpage-for-unknown-provider-ids-by-including-the-requested-providerid-in-the-message-and-offering-a-clear-next-step-e-g-go-back-to-provider-hub-use-english-for-all-user-facing-text",
+      "title": "Improve user-facing error handling on GenericProviderPage for unknown provider IDs by including the requested providerId in the message and offering a clear next step (e.g., go back to Provider Hub). Use English for all user-facing text.",
+      "reqIds": [
+        "REQ-25"
+      ],
+      "version": 1
+    },
+    {
+      "id": "feature-fix-the-actor-initialization-flow-so-the-backend-actor-reliably-becomes-available-for-authenticated-users-including-on-the-fal-ai-provider-page-and-does-not-remain-null-due-to-initialization-errors",
+      "title": "Fix the actor initialization flow so the backend actor reliably becomes available for authenticated users (including on the Fal.ai provider page) and does not remain null due to initialization errors.",
+      "reqIds": [
+        "REQ-26"
+      ],
+      "version": 1
+    },
+    {
+      "id": "feature-prevent-provider-key-saving-from-failing-with-a-generic-actor-not-available-error-by-gating-key-mutations-on-actor-readiness-and-providing-a-user-friendly-english-message-when-the-actor-is-still-connecting-or-unavailable",
+      "title": "Prevent provider key saving from failing with a generic 'Actor not available' error by gating key mutations on actor readiness and providing a user-friendly English message when the actor is still connecting or unavailable.",
+      "reqIds": [
+        "REQ-27"
+      ],
+      "version": 1
+    },
+    {
+      "id": "feature-improve-error-visibility-for-actor-dependent-react-query-hooks-so-that-failures-to-create-use-the-actor-surface-actionable-information-in-the-ui-rather-than-silently-causing-actor-dependent-actions-to-fail-later",
+      "title": "Improve error visibility for actor-dependent React Query hooks so that failures to create/use the actor surface actionable information in the UI rather than silently causing actor-dependent actions to fail later.",
+      "reqIds": [
+        "REQ-28"
+      ],
+      "version": 1
+    },
+    {
+      "id": "feature-improve-user-facing-error-handling-for-backend-call-failures-that-return-reject-code-5-ic0508-canister-is-stopped-so-the-ui-shows-a-clear-english-explanation-and-next-steps-instead-of-the-raw-replica-rejection-payload",
+      "title": "Improve user-facing error handling for backend call failures that return 'Reject code: 5' / 'IC0508' / 'Canister … is stopped' so the UI shows a clear English explanation and next steps instead of the raw replica rejection payload.",
+      "reqIds": [
+        "REQ-29"
+      ],
+      "version": 1
+    },
+    {
+      "id": "feature-update-providerkeymanager-to-classify-and-display-backend-errors-from-the-save-mutation-in-a-user-friendly-way-including-a-dedicated-handling-path-for-ic0508-reject-code-5-errors-and-to-keep-the-user-in-a-recoverable-state-no-stuck-spinners-actionable-retry-guidance",
+      "title": "Update ProviderKeyManager to classify and display backend errors from the save mutation in a user-friendly way, including a dedicated handling path for IC0508/Reject code 5 errors, and to keep the user in a recoverable state (no stuck spinners, actionable retry guidance).",
+      "reqIds": [
+        "REQ-30"
+      ],
+      "version": 1
+    },
+    {
+      "id": "feature-extend-backendconnectionalert-to-recognize-and-explain-the-canister-stopped-class-of-errors-ic0508-reject-code-5-with-tailored-english-guidance-and-ensure-it-remains-usable-for-both-authenticated-and-unauthenticated-states",
+      "title": "Extend BackendConnectionAlert to recognize and explain the 'canister stopped' class of errors (IC0508 / Reject code: 5) with tailored English guidance, and ensure it remains usable for both authenticated and unauthenticated states.",
+      "reqIds": [
+        "REQ-31"
+      ],
+      "version": 1
+    },
+    {
+      "id": "feature-ensure-all-actor-dependent-provider-flows-are-gated-on-the-existing-usebackendactor-readiness-signals-isready-isconnecting-so-the-ui-never-attempts-provider-key-mutations-or-provider-chat-mutations-while-still-connecting-and-surfaces-the-still-connecting-to-the-backend-message-instead",
+      "title": "Ensure all actor-dependent provider flows are gated on the existing useBackendActor readiness signals (isReady / isConnecting) so the UI never attempts provider-key mutations or provider-chat mutations while still connecting, and surfaces the 'Still connecting to the backend…' message instead.",
+      "reqIds": [
+        "REQ-32"
+      ],
+      "version": 1
+    }
+  ],
+  "new_feature_requests": [
+    {
+      "id": "AR-1",
+      "summary": "Provider hub UI: list/tab board of all supported AI API providers; selecting a provider navigates to its dedicated page",
+      "reqIds": [],
+      "status": "pending"
+    },
+    {
+      "id": "AR-2",
+      "summary": "Dedicated per-provider pages (e.g., OpenAI, LTX, Replicate, RunPod, Slack, etc.) that operate only that provider’s tooling and flows",
+      "reqIds": [],
+      "status": "pending"
+    },
+    {
+      "id": "AR-3",
+      "summary": "Per-provider chatbot command center with isolated context/history per provider page",
+      "reqIds": [],
+      "status": "pending"
+    },
+    {
+      "id": "AR-4",
+      "summary": "Per-provider API key management: separate key page/section for each provider tied to its provider command center",
+      "reqIds": [],
+      "status": "pending"
+    },
+    {
+      "id": "AR-5",
+      "summary": "Improve mobile friendliness: make the app responsive and usable on small screens (provider hub, provider pages, chatbot command center, key management, dashboards)",
+      "reqIds": [],
+      "status": "pending"
+    },
+    {
+      "id": "AR-6",
+      "summary": "Add two configurable “Custom Slot” provider entries with per-provider API key fields for both a display name and key value (Custom Slot 1, Custom Slot 2)",
+      "reqIds": [],
+      "status": "pending"
+    },
+    {
+      "id": "AR-7",
+      "summary": "Expand the provider hub/default provider list to include additional providers (Gemini, Runway, Pika, Luma, Kling, Hailuo, Stability AI, Fal.ai, ModelScope, Leonardo AI, Synthesia, TikTok, Shopify, Shopify Shop URL) and ensure each provider routes to its own page that lists its capabilities",
+      "reqIds": [],
+      "status": "pending"
+    },
+    {
+      "id": "AR-12",
+      "summary": "Update the backend data model and APIs to persist per-user custom slot metadata (at minimum: custom slot display name for Custom Slot 1 and Custom Slot 2) alongside existing per-user provider key storage, with authorization checks consistent with existing key/profile methods.",
+      "reqIds": [
+        "REQ-17"
+      ],
+      "status": "pending"
+    },
+    {
+      "id": "AR-13",
+      "summary": "Provider-specific capability-driven page layouts and workflows: each provider page should expose tools/options aligned to that provider’s capabilities (e.g., app-builder setup, video generation with download/send actions) and include recommended prompt templates per provider",
+      "reqIds": [],
+      "status": "pending"
+    }
+  ],
+  "projectName": "Replica of Empire Video+ with provider-centric navigation and per-provider command center pages",
+  "clarification_mode": "instant",
+  "clarification_rounds": 0
+}

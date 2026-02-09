@@ -1,0 +1,105 @@
+{
+  "kind": "implementation_plan",
+  "version": "1.0",
+  "title": "Provider flow resilience: friendly stopped-canister messaging and strict backend-readiness gating",
+  "requirements": [
+    {
+      "id": "REQ-29",
+      "summary": "Centralize classification of stopped-canister (IC0508 / Reject code 5) and other backend-call failures so user-facing messages are concise English guidance and never show raw replica rejection payloads.",
+      "acceptanceCriteria": [
+        "When an API key save/update fails and the thrown error text includes 'IC0508', 'Reject code: 5', or 'canister' + 'stopped', the UI displays an English message indicating the backend canister appears stopped/unavailable and prompts the user to retry or reload.",
+        "The raw reject payload from the agent/replica is not shown directly to the end user in toast text or in-page alerts.",
+        "The improved message appears consistently anywhere backend call failures are surfaced for provider actions (at minimum: ProviderKeyManager save flow)."
+      ],
+      "file_operations": [
+        {
+          "path": "frontend/src/utils/backendErrorMessages.ts",
+          "operation": "create",
+          "description": "Add a small utility to classify backend-call failures (including IC0508/Reject code 5/canister stopped) and return safe, user-friendly English messages plus recommended next steps; ensure it strips/avoids showing raw replica/agent rejection payloads."
+        },
+        {
+          "path": "frontend/src/components/keys/ProviderKeyManager.tsx",
+          "operation": "modify",
+          "description": "Use the shared backend error classification utility to convert save-mutation failures into safe English toast/inline messages; avoid displaying raw error.message directly and keep details only in console logs."
+        },
+        {
+          "path": "frontend/src/components/chat/ChatbotCommandCenter.tsx",
+          "operation": "modify",
+          "description": "Use the shared backend error classification utility when surfacing send failures (toast) so raw backend/replica payloads are never shown to users."
+        }
+      ]
+    },
+    {
+      "id": "REQ-30",
+      "summary": "Harden ProviderKeyManager save flow with dedicated stopped-canister handling, actionable guidance, and recoverable UI state (no stuck spinners; input remains editable for retry).",
+      "acceptanceCriteria": [
+        "If saving a provider credential fails due to a stopped canister (IC0508 / Reject code: 5), ProviderKeyManager shows a clear English error (toast and/or inline alert) and keeps the entered value editable so the user can retry.",
+        "If saving fails for other reasons (e.g., unauthorized, network), ProviderKeyManager surfaces a concise English error message (not the raw payload).",
+        "ProviderKeyManager does not call the save mutation when the backend actor is not ready (this guard already exists; keep it working)."
+      ],
+      "file_operations": [
+        {
+          "path": "frontend/src/components/keys/ProviderKeyManager.tsx",
+          "operation": "modify",
+          "description": "Add an explicit stopped-canister error path (IC0508/Reject code 5) using the shared error utility; ensure save errors do not clear input or force a non-editable state, and ensure pending/loading UI always returns to idle after error."
+        },
+        {
+          "path": "frontend/src/hooks/keys/useProviderKey.ts",
+          "operation": "modify",
+          "description": "Ensure the save mutation surfaces sanitized, user-friendly errors (wrap/translate thrown errors using the shared backend error utility) so callers never end up displaying raw replica rejection payloads."
+        }
+      ]
+    },
+    {
+      "id": "REQ-31",
+      "summary": "Extend BackendConnectionAlert to recognize 'canister stopped' errors (IC0508 / Reject code 5) and show tailored English guidance, supporting both authenticated and unauthenticated users.",
+      "acceptanceCriteria": [
+        "When BackendConnectionAlert receives an error whose message includes IC0508 / Reject code: 5 / 'canister … is stopped', it renders an English message indicating the backend is currently unavailable/stopped and suggests 'Retry Connection' and 'Reload Page' as next steps (and login when unauthenticated).",
+        "BackendConnectionAlert continues to show the existing guidance for network/timeout/unauthorized errors."
+      ],
+      "file_operations": [
+        {
+          "path": "frontend/src/components/common/BackendConnectionAlert.tsx",
+          "operation": "modify",
+          "description": "Add detection for IC0508/Reject code 5/canister stopped (preferably via the shared backend error utility) and render tailored English explanation + next steps while preserving existing network/timeout/unauthorized guidance and unauthenticated login CTA."
+        },
+        {
+          "path": "frontend/src/utils/backendErrorMessages.ts",
+          "operation": "modify",
+          "description": "Expose a helper specifically usable by BackendConnectionAlert for mapping connection-related errors (including stopped canister) into concise English messages and action suggestions."
+        }
+      ]
+    },
+    {
+      "id": "REQ-32",
+      "summary": "Gate all actor-dependent provider flows on useBackendActor readiness so provider key and provider chat actions never call the backend while connecting; show 'Still connecting…' guidance instead of raw errors.",
+      "acceptanceCriteria": [
+        "Provider key save/update is blocked while useBackendActor reports !isReady, with an English message explaining the backend is still connecting.",
+        "Provider chat send is blocked while useBackendActor reports !isReady, with an English message explaining the backend is still connecting (no raw error payload).",
+        "No provider page action triggers a backend call if the backend actor is null/unready; the UI must render a loading/connecting or connection-error state instead."
+      ],
+      "file_operations": [
+        {
+          "path": "frontend/src/hooks/chat/useProviderChat.ts",
+          "operation": "modify",
+          "description": "Reinforce readiness gating for chat send and message loading by ensuring the hook never attempts backend calls unless actor is present and isReady is true; sanitize any thrown errors using the shared backend error utility."
+        },
+        {
+          "path": "frontend/src/components/chat/ChatbotCommandCenter.tsx",
+          "operation": "modify",
+          "description": "Disable send UI while backend is not ready and show a clear English 'Still connecting to the backend…' message (inline and/or toast) driven by useBackendActor readiness via the chat hook; avoid raw payloads."
+        },
+        {
+          "path": "frontend/src/components/keys/ProviderKeyManager.tsx",
+          "operation": "modify",
+          "description": "Keep/strengthen the existing isReady guard so the save mutation is never invoked while connecting/unready, and ensure the user sees a clear English connecting message rather than raw errors."
+        },
+        {
+          "path": "frontend/src/components/providers/ProviderActionGuard.tsx",
+          "operation": "modify",
+          "description": "Ensure the guard consistently renders a connecting state while useBackendActor isConnecting or !isReady (rather than allowing children to render and trigger actions), and rely on BackendConnectionAlert for connection errors."
+        }
+      ]
+    }
+  ]
+}

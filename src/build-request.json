@@ -1,0 +1,106 @@
+{
+  "kind": "build_request",
+  "title": "Fix Fal.ai key save failure by improving backend readiness gating and stopped-canister error messaging",
+  "priority": "high",
+  "requirements": [
+    {
+      "id": "REQ-29",
+      "text": "Improve user-facing error handling for backend call failures that return 'Reject code: 5' / 'IC0508' / 'Canister … is stopped' so the UI shows a clear English explanation and next steps instead of the raw replica rejection payload.",
+      "target": "frontend",
+      "source": {
+        "messageIds": [
+          "msg-4"
+        ],
+        "quotes": [
+          "This is what it is saying now"
+        ]
+      },
+      "acceptanceCriteria": [
+        "When an API key save/update fails and the thrown error text includes 'IC0508', 'Reject code: 5', or 'canister' + 'stopped', the UI displays an English message indicating the backend canister appears stopped/unavailable and prompts the user to retry or reload.",
+        "The raw reject payload from the agent/replica is not shown directly to the end user in toast text or in-page alerts.",
+        "The improved message appears consistently anywhere backend call failures are surfaced for provider actions (at minimum: ProviderKeyManager save flow)."
+      ]
+    },
+    {
+      "id": "REQ-30",
+      "text": "Update ProviderKeyManager to classify and display backend errors from the save mutation in a user-friendly way, including a dedicated handling path for IC0508/Reject code 5 errors, and to keep the user in a recoverable state (no stuck spinners, actionable retry guidance).",
+      "target": "frontend",
+      "source": {
+        "messageIds": [
+          "msg-6"
+        ],
+        "quotes": [
+          "Yes please"
+        ]
+      },
+      "acceptanceCriteria": [
+        "If saving a provider credential fails due to a stopped canister (IC0508 / Reject code: 5), ProviderKeyManager shows a clear English error (toast and/or inline alert) and keeps the entered value editable so the user can retry.",
+        "If saving fails for other reasons (e.g., unauthorized, network), ProviderKeyManager surfaces a concise English error message (not the raw payload).",
+        "ProviderKeyManager does not call the save mutation when the backend actor is not ready (this guard already exists; keep it working)."
+      ]
+    },
+    {
+      "id": "REQ-31",
+      "text": "Extend BackendConnectionAlert to recognize and explain the 'canister stopped' class of errors (IC0508 / Reject code: 5) with tailored English guidance, and ensure it remains usable for both authenticated and unauthenticated states.",
+      "target": "frontend",
+      "source": {
+        "messageIds": [
+          "msg-4",
+          "msg-6"
+        ],
+        "quotes": [
+          "This is what it is saying now",
+          "Yes please"
+        ]
+      },
+      "acceptanceCriteria": [
+        "When BackendConnectionAlert receives an error whose message includes IC0508 / Reject code: 5 / 'canister … is stopped', it renders an English message indicating the backend is currently unavailable/stopped and suggests 'Retry Connection' and 'Reload Page' as next steps (and login when unauthenticated).",
+        "BackendConnectionAlert continues to show the existing guidance for network/timeout/unauthorized errors."
+      ]
+    },
+    {
+      "id": "REQ-32",
+      "text": "Ensure all actor-dependent provider flows are gated on the existing useBackendActor readiness signals (isReady / isConnecting) so the UI never attempts provider-key mutations or provider-chat mutations while still connecting, and surfaces the 'Still connecting to the backend…' message instead.",
+      "target": "frontend",
+      "source": {
+        "messageIds": [
+          "msg-6"
+        ],
+        "quotes": [
+          "Yes please"
+        ]
+      },
+      "acceptanceCriteria": [
+        "Provider key save/update is blocked while useBackendActor reports !isReady, with an English message explaining the backend is still connecting.",
+        "Provider chat send is blocked while useBackendActor reports !isReady, with an English message explaining the backend is still connecting (no raw error payload).",
+        "No provider page action triggers a backend call if the backend actor is null/unready; the UI must render a loading/connecting or connection-error state instead."
+      ]
+    }
+  ],
+  "constraints": [
+    "Do not edit any files under frontend/src/components/ui (read-only shadcn components).",
+    "Do not edit immutable paths: frontend/src/hooks/useInternetIdentity.ts, frontend/src/hooks/useInternetIdentity.tsx, frontend/src/hooks/useActor.ts, frontend/src/main.tsx.",
+    "Backend must remain a single Motoko actor in backend/main.mo; only add backend/migration.mo if a state schema change is required.",
+    "Use English for all user-facing UI text."
+  ],
+  "nonGoals": [
+    "Do not implement actual Fal.ai API execution/inference; this change is limited to reliability and error handling around backend connectivity and credential saving.",
+    "Do not add third-party authentication providers (only Internet Identity).",
+    "Do not add external databases or services.",
+    "Do not add new provider types or change the provider registry IDs."
+  ],
+  "imageRequirements": {
+    "required": [],
+    "edits": []
+  },
+  "userProfileUpdate": {
+    "goalsToAdd": [],
+    "goalsToRemove": [],
+    "preferencesToAdd": [],
+    "preferencesToRemove": [],
+    "miscToAdd": [],
+    "miscToRemove": [],
+    "fieldsToSet": {},
+    "fieldsToDelete": []
+  }
+}

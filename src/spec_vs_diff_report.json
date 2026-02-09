@@ -1,0 +1,78 @@
+{
+  "kind": "spec_vs_diff_report",
+  "version": "1.0",
+  "generatedAt": "2026-02-09T02:09:40.835Z",
+  "summary": "Diff adds a shared backend error classification utility and updates ProviderKeyManager, BackendConnectionAlert, and provider chat flows to gate calls on backend readiness and to surface friendlier error messages (including stopped-canister detection). However, BackendConnectionAlert does not offer “Retry Connection” when unauthenticated as required, and the diff summary indicates several unrelated UI/routing/provider-registry enhancements that were not requested.",
+  "missing_requirements": [
+    {
+      "id": "REQ-31",
+      "requirement": "When BackendConnectionAlert receives a stopped-canister style error and the user is unauthenticated, it should suggest 'Retry Connection' and 'Reload Page' as next steps (and login when unauthenticated).",
+      "reason": "BackendConnectionAlert shows 'Log In' (instead of 'Retry Connection') when unauthenticated; it always shows 'Reload Page', but does not provide 'Retry Connection' in the unauthenticated branch.",
+      "evidence": [
+        "frontend/src/components/common/BackendConnectionAlert.tsx"
+      ]
+    }
+  ],
+  "hallucinated_features": [
+    {
+      "description": "Added/changed routing to include dedicated static routes for /providers/fal-ai and /providers/fal (alias) to render GenericProviderPage with providerId override.",
+      "reason": "BuildRequest is limited to backend readiness gating and error messaging around connectivity/credential saving; it explicitly lists Fal.ai inference as a non-goal and does not request routing changes.",
+      "evidence": [
+        "frontend-file-summaries.txt (frontend/src/App.tsx summary)"
+      ]
+    },
+    {
+      "description": "Extended provider registry with workflowType, optionFields, and recommendedPrompts for capability-driven UI across providers.",
+      "reason": "Not requested; BuildRequest forbids changing provider registry IDs and focuses only on reliability/error handling for backend connectivity and credential saving.",
+      "evidence": [
+        "frontend-file-summaries.txt (frontend/src/providers/providers.ts summary)"
+      ]
+    },
+    {
+      "description": "Multiple navigation/layout responsiveness changes (AppShell mobile provider navigation state management; TopNav mobile hamburger/collapsible menu; ProviderNav sidebar updates).",
+      "reason": "Not requested; outside the stated scope of backend readiness gating and error messaging.",
+      "evidence": [
+        "frontend-file-summaries.txt (frontend/src/components/layout/AppShell.tsx summary)",
+        "frontend-file-summaries.txt (frontend/src/components/layout/TopNav.tsx summary)",
+        "frontend-file-summaries.txt (frontend/src/components/providers/ProviderNav.tsx summary)"
+      ]
+    },
+    {
+      "description": "Added/changed authentication gating and login/logout behaviors (AuthGate requirement to login before showing content; LoginButton cache clearing).",
+      "reason": "Not requested; BuildRequest explicitly says do not add third-party auth and focuses on error handling/readiness gating rather than changing auth gating UX.",
+      "evidence": [
+        "frontend-file-summaries.txt (frontend/src/components/auth/AuthGate.tsx summary)",
+        "frontend-file-summaries.txt (frontend/src/components/auth/LoginButton.tsx summary)"
+      ]
+    },
+    {
+      "description": "Introduced ProfileSetupModal that stores display name in localStorage as a workaround until a backend method exists.",
+      "reason": "Not requested; outside the scope of Fal.ai key save failure and backend connectivity/error messaging.",
+      "evidence": [
+        "frontend-file-summaries.txt (frontend/src/components/auth/ProfileSetupModal.tsx summary)"
+      ]
+    },
+    {
+      "description": "Added/expanded provider hub and provider-specific pages with recommended prompts and capability-driven tools (ProviderHubPage, OpenAIPage, LTXPage, ReplicatePage, etc.).",
+      "reason": "Not requested; outside the scope of backend readiness/error handling changes.",
+      "evidence": [
+        "frontend-file-summaries.txt (frontend/src/pages/ProviderHubPage.tsx summary)",
+        "frontend-file-summaries.txt (frontend/src/pages/providers/OpenAIPage.tsx summary)",
+        "frontend-file-summaries.txt (frontend/src/pages/providers/LTXPage.tsx summary)",
+        "frontend-file-summaries.txt (frontend/src/pages/providers/ReplicatePage.tsx summary)"
+      ]
+    }
+  ],
+  "confidence": 0.73,
+  "changed_files": [
+    "frontend-file-summaries.txt",
+    "frontend/src/components/chat/ChatbotCommandCenter.tsx",
+    "frontend/src/components/common/BackendConnectionAlert.tsx",
+    "frontend/src/components/keys/ProviderKeyManager.tsx",
+    "frontend/src/components/providers/ProviderActionGuard.tsx",
+    "frontend/src/hooks/chat/useProviderChat.ts",
+    "frontend/src/hooks/keys/useProviderKey.ts",
+    "frontend/src/utils/backendErrorMessages.ts",
+    "project_state.json"
+  ]
+}

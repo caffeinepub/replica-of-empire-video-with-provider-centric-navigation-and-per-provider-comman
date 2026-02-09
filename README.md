@@ -1,2 +1,3 @@
-# replica-of-empire-video-with-provider-centric-navigation-and-per-provider-comman
-Exported from Caffeine project: Replica of Empire Video+ with provider-centric navigation and per-provider command center pages
+## 
+
+To run app build and run docker image: `docker build -t app . docker run -it --network host app`
