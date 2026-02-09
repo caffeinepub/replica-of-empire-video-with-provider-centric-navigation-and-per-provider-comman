@@ -24,7 +24,23 @@ export const UserRole = IDL.Variant({
   'user' : IDL.Null,
   'guest' : IDL.Null,
 });
+export const WorkflowRunStatus = IDL.Variant({
+  'pending' : IDL.Null,
+  'success' : IDL.Null,
+  'failed' : IDL.Text,
+  'running' : IDL.Null,
+});
 export const Time = IDL.Int;
+export const WorkflowRun = IDL.Record({
+  'id' : IDL.Text,
+  'status' : WorkflowRunStatus,
+  'provider' : IDL.Text,
+  'inputs' : IDL.Text,
+  'timestamp' : Time,
+  'outputBlobId' : IDL.Opt(IDL.Text),
+  'workflowType' : IDL.Text,
+  'durationNanos' : IDL.Opt(IDL.Int),
+});
 export const APIKey = IDL.Record({
   'key' : IDL.Text,
   'provider' : IDL.Text,
@@ -79,6 +95,11 @@ export const idlService = IDL.Service({
   'addOrUpdateAPIKey' : IDL.Func([IDL.Text, IDL.Text], [], []),
   'assignCallerUserRole' : IDL.Func([IDL.Principal, UserRole], [], []),
   'customProviderMetadataExists' : IDL.Func([IDL.Text], [IDL.Bool], ['query']),
+  'executeWorkflow' : IDL.Func(
+      [IDL.Text, IDL.Text, IDL.Text],
+      [WorkflowRun],
+      [],
+    ),
   'getAllAPIKeys' : IDL.Func(
       [],
       [IDL.Vec(IDL.Tuple(IDL.Principal, IDL.Vec(APIKey)))],
@@ -110,6 +131,7 @@ export const idlService = IDL.Service({
       [IDL.Opt(UserProfile)],
       ['query'],
     ),
+  'getWorkflowRuns' : IDL.Func([IDL.Text], [IDL.Vec(WorkflowRun)], ['query']),
   'initializeProviders' : IDL.Func([IDL.Vec(ProviderInfo)], [], []),
   'isCallerAdmin' : IDL.Func([], [IDL.Bool], ['query']),
   'providerKeyExists' : IDL.Func([IDL.Text], [IDL.Bool], ['query']),
@@ -118,6 +140,11 @@ export const idlService = IDL.Service({
       [IDL.Text, IDL.Nat],
       [IDL.Vec(ChatMessage)],
       ['query'],
+    ),
+  'updateWorkflowRun' : IDL.Func(
+      [IDL.Text, WorkflowRunStatus, IDL.Opt(IDL.Text), IDL.Opt(IDL.Int)],
+      [WorkflowRun],
+      [],
     ),
 });
 
@@ -140,7 +167,23 @@ export const idlFactory = ({ IDL }) => {
     'user' : IDL.Null,
     'guest' : IDL.Null,
   });
+  const WorkflowRunStatus = IDL.Variant({
+    'pending' : IDL.Null,
+    'success' : IDL.Null,
+    'failed' : IDL.Text,
+    'running' : IDL.Null,
+  });
   const Time = IDL.Int;
+  const WorkflowRun = IDL.Record({
+    'id' : IDL.Text,
+    'status' : WorkflowRunStatus,
+    'provider' : IDL.Text,
+    'inputs' : IDL.Text,
+    'timestamp' : Time,
+    'outputBlobId' : IDL.Opt(IDL.Text),
+    'workflowType' : IDL.Text,
+    'durationNanos' : IDL.Opt(IDL.Int),
+  });
   const APIKey = IDL.Record({
     'key' : IDL.Text,
     'provider' : IDL.Text,
@@ -199,6 +242,11 @@ export const idlFactory = ({ IDL }) => {
         [IDL.Bool],
         ['query'],
       ),
+    'executeWorkflow' : IDL.Func(
+        [IDL.Text, IDL.Text, IDL.Text],
+        [WorkflowRun],
+        [],
+      ),
     'getAllAPIKeys' : IDL.Func(
         [],
         [IDL.Vec(IDL.Tuple(IDL.Principal, IDL.Vec(APIKey)))],
@@ -230,6 +278,7 @@ export const idlFactory = ({ IDL }) => {
         [IDL.Opt(UserProfile)],
         ['query'],
       ),
+    'getWorkflowRuns' : IDL.Func([IDL.Text], [IDL.Vec(WorkflowRun)], ['query']),
     'initializeProviders' : IDL.Func([IDL.Vec(ProviderInfo)], [], []),
     'isCallerAdmin' : IDL.Func([], [IDL.Bool], ['query']),
     'providerKeyExists' : IDL.Func([IDL.Text], [IDL.Bool], ['query']),
@@ -238,6 +287,11 @@ export const idlFactory = ({ IDL }) => {
         [IDL.Text, IDL.Nat],
         [IDL.Vec(ChatMessage)],
         ['query'],
+      ),
+    'updateWorkflowRun' : IDL.Func(
+        [IDL.Text, WorkflowRunStatus, IDL.Opt(IDL.Text), IDL.Opt(IDL.Int)],
+        [WorkflowRun],
+        [],
       ),
   });
 };

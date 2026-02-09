@@ -1,87 +1,159 @@
 {
   "kind": "coverage_report",
   "version": "1.0",
-  "generatedAt": "2026-02-09T02:09:40.840Z",
+  "generatedAt": "2026-02-09T02:31:22.905Z",
   "sources": {
     "buildRequest": true,
     "implementationPlan": true
   },
   "requirements": {
-    "total": 4,
-    "implemented": 4,
+    "total": 10,
+    "implemented": 7,
     "items": [
       {
-        "id": "REQ-29",
-        "summary": "Improve user-facing error handling for backend call failures that return 'Reject code: 5' / 'IC0508' / 'Canister … is stopped' so the UI shows a clear English explanation and next steps instead of the raw replica rejection payload.",
+        "id": "REQ-33",
+        "summary": "Replace the current placeholder workflow UI (disabled buttons + “Not Integrated Yet” callouts) with working execution flows that run once a provider credential is configured, starting with Fal.ai image generation and then applying the same “execute → show result → download → share” pattern across all providers according to each provider’s declared workflowType/capabilities.",
         "status": "implemented",
         "plannedFiles": [
-          "frontend/src/utils/backendErrorMessages.ts",
-          "frontend/src/components/keys/ProviderKeyManager.tsx",
-          "frontend/src/components/chat/ChatbotCommandCenter.tsx"
+          "frontend/src/components/providers/ProviderToolsOptionsSection.tsx",
+          "frontend/src/pages/providers/GenericProviderPage.tsx"
         ],
         "matchedFiles": [
-          "frontend/src/utils/backendErrorMessages.ts",
-          "frontend/src/components/keys/ProviderKeyManager.tsx",
-          "frontend/src/components/chat/ChatbotCommandCenter.tsx"
+          "frontend/src/components/providers/ProviderToolsOptionsSection.tsx",
+          "frontend/src/pages/providers/GenericProviderPage.tsx"
         ]
       },
       {
-        "id": "REQ-30",
-        "summary": "Update ProviderKeyManager to classify and display backend errors from the save mutation in a user-friendly way, including a dedicated handling path for IC0508/Reject code 5 errors, and to keep the user in a recoverable state (no stuck spinners, actionable retry guidance).",
+        "id": "REQ-34",
+        "summary": "Implement backend workflow execution APIs (single-actor Motoko) that allow the frontend to request provider workflow runs (image/video/integration/app-builder), while keeping provider credentials stored only in the backend and never returning stored secret values to the UI.",
+        "status": "unknown",
+        "plannedFiles": [],
+        "matchedFiles": []
+      },
+      {
+        "id": "REQ-35",
+        "summary": "Add backend state for per-user workflow run history (per provider) including request parameters (non-secret), timestamps, status, error (sanitized), and references to any stored output artifacts (e.g., image/video blobs) so users can download/share after generation completes.",
+        "status": "unknown",
+        "plannedFiles": [],
+        "matchedFiles": []
+      },
+      {
+        "id": "REQ-36",
+        "summary": "Use canister-side storage for generated artifacts (images/videos) so download/share works without requiring the frontend to store provider keys or call third-party providers directly from the browser.",
+        "status": "unknown",
+        "plannedFiles": [],
+        "matchedFiles": []
+      },
+      {
+        "id": "REQ-37",
+        "summary": "Implement Fal.ai image generation end-to-end: support prompt input, multi-model selection, generate, show preview, download, and share, matching the workflow shown in the uploaded screenshot.",
         "status": "implemented",
         "plannedFiles": [
-          "frontend/src/components/keys/ProviderKeyManager.tsx",
-          "frontend/src/hooks/keys/useProviderKey.ts"
+          "frontend/src/providers/providers.ts",
+          "frontend/src/components/providers/ProviderToolsOptionsSection.tsx"
         ],
         "matchedFiles": [
-          "frontend/src/components/keys/ProviderKeyManager.tsx",
-          "frontend/src/hooks/keys/useProviderKey.ts"
+          "frontend/src/providers/providers.ts",
+          "frontend/src/components/providers/ProviderToolsOptionsSection.tsx"
         ]
       },
       {
-        "id": "REQ-31",
-        "summary": "Extend BackendConnectionAlert to recognize and explain the 'canister stopped' class of errors (IC0508 / Reject code: 5) with tailored English guidance, and ensure it remains usable for both authenticated and unauthenticated states.",
+        "id": "REQ-38",
+        "summary": "Upgrade ProviderToolsOptionsSection so that for workflowType values (image-generation, video-generation, integration, app-builder, custom) the primary action buttons are functional (not disabled) when requirements are met, and they call the backend workflow execution APIs using the optionFields as inputs (excluding secrets).",
         "status": "implemented",
         "plannedFiles": [
-          "frontend/src/components/common/BackendConnectionAlert.tsx",
-          "frontend/src/utils/backendErrorMessages.ts"
+          "frontend/src/components/providers/ProviderToolsOptionsSection.tsx",
+          "frontend/src/hooks/workflows/useWorkflowExecution.ts"
         ],
         "matchedFiles": [
-          "frontend/src/components/common/BackendConnectionAlert.tsx",
-          "frontend/src/utils/backendErrorMessages.ts"
+          "frontend/src/components/providers/ProviderToolsOptionsSection.tsx",
+          "frontend/src/hooks/workflows/useWorkflowExecution.ts"
         ]
       },
       {
-        "id": "REQ-32",
-        "summary": "Ensure all actor-dependent provider flows are gated on the existing useBackendActor readiness signals (isReady / isConnecting) so the UI never attempts provider-key mutations or provider-chat mutations while still connecting, and surfaces the 'Still connecting to the backend…' message instead.",
+        "id": "REQ-39",
+        "summary": "Implement a reusable “Generation Result” UI pattern used by image/video workflows: shows run status (queued/running/succeeded/failed), progress messaging when available, the artifact preview (image/video), and action buttons for download/share.",
         "status": "implemented",
         "plannedFiles": [
-          "frontend/src/hooks/chat/useProviderChat.ts",
-          "frontend/src/components/chat/ChatbotCommandCenter.tsx",
-          "frontend/src/components/keys/ProviderKeyManager.tsx",
-          "frontend/src/components/providers/ProviderActionGuard.tsx"
+          "frontend/src/components/workflows/GenerationResult.tsx",
+          "frontend/src/utils/artifacts.ts",
+          "frontend/src/utils/share.ts"
         ],
         "matchedFiles": [
-          "frontend/src/hooks/chat/useProviderChat.ts",
-          "frontend/src/components/chat/ChatbotCommandCenter.tsx",
-          "frontend/src/components/keys/ProviderKeyManager.tsx",
-          "frontend/src/components/providers/ProviderActionGuard.tsx"
+          "frontend/src/components/workflows/GenerationResult.tsx",
+          "frontend/src/utils/artifacts.ts",
+          "frontend/src/utils/share.ts"
+        ]
+      },
+      {
+        "id": "REQ-40",
+        "summary": "Apply the same execution approach across all providers declared in the frontend provider registry (frontend/src/providers/providers.ts): for each provider, render and execute the workflow corresponding to its workflowType using backend execution APIs, so that “Generate/Execute/Build App” actions actually run when keys are configured.",
+        "status": "implemented",
+        "plannedFiles": [
+          "frontend/src/components/providers/ProviderToolsOptionsSection.tsx",
+          "frontend/src/components/workflows/ExecutionResultPanel.tsx"
+        ],
+        "matchedFiles": [
+          "frontend/src/components/providers/ProviderToolsOptionsSection.tsx",
+          "frontend/src/components/workflows/ExecutionResultPanel.tsx"
+        ]
+      },
+      {
+        "id": "REQ-41",
+        "summary": "Ensure all new workflow execution UI and hooks are gated on the existing backend readiness signals (useBackendActor: isReady/isConnecting) and provider key existence (useProviderKey), and provide clear English messaging when the backend is still connecting or unavailable.",
+        "status": "implemented",
+        "plannedFiles": [
+          "frontend/src/hooks/workflows/useWorkflowExecution.ts",
+          "frontend/src/components/providers/ProviderToolsOptionsSection.tsx"
+        ],
+        "matchedFiles": [
+          "frontend/src/hooks/workflows/useWorkflowExecution.ts",
+          "frontend/src/components/providers/ProviderToolsOptionsSection.tsx"
+        ]
+      },
+      {
+        "id": "REQ-42",
+        "summary": "Add a “Generation History” section on relevant provider pages (image/video workflows) that lists recent runs for that provider for the current user and allows re-downloading artifacts and reusing a run’s parameters (e.g., reinsert prompt/model into inputs).",
+        "status": "implemented",
+        "plannedFiles": [
+          "frontend/src/hooks/workflows/useWorkflowRuns.ts",
+          "frontend/src/components/workflows/GenerationHistory.tsx",
+          "frontend/src/components/providers/ProviderToolsOptionsSection.tsx"
+        ],
+        "matchedFiles": [
+          "frontend/src/hooks/workflows/useWorkflowRuns.ts",
+          "frontend/src/components/workflows/GenerationHistory.tsx",
+          "frontend/src/components/providers/ProviderToolsOptionsSection.tsx"
         ]
       }
     ]
   },
   "changedFiles": [
+    "backend/main.mo",
+    "backend/migration.mo",
     "build-request.json",
     "feature_evidence.json",
     "frontend-file-summaries.txt",
     "frontend-implementation-plan.json",
-    "frontend/src/components/chat/ChatbotCommandCenter.tsx",
-    "frontend/src/components/common/BackendConnectionAlert.tsx",
-    "frontend/src/components/keys/ProviderKeyManager.tsx",
-    "frontend/src/components/providers/ProviderActionGuard.tsx",
-    "frontend/src/hooks/chat/useProviderChat.ts",
-    "frontend/src/hooks/keys/useProviderKey.ts",
-    "frontend/src/utils/backendErrorMessages.ts",
+    "frontend/src/backend.d.ts",
+    "frontend/src/backend.ts",
+    "frontend/src/components/providers/ProviderToolsOptionsSection.tsx",
+    "frontend/src/components/workflows/ExecutionResultPanel.tsx",
+    "frontend/src/components/workflows/GenerationHistory.tsx",
+    "frontend/src/components/workflows/GenerationResult.tsx",
+    "frontend/src/declarations/backend.did.d.ts",
+    "frontend/src/declarations/backend.did.js",
+    "frontend/src/hooks/workflows/useWorkflowExecution.ts",
+    "frontend/src/hooks/workflows/useWorkflowRuns.ts",
+    "frontend/src/pages/providers/CustomSlotProviderPage.tsx",
+    "frontend/src/pages/providers/GenericProviderPage.tsx",
+    "frontend/src/pages/providers/LTXPage.tsx",
+    "frontend/src/pages/providers/ReplicatePage.tsx",
+    "frontend/src/pages/providers/RunPodPage.tsx",
+    "frontend/src/pages/providers/SlackPage.tsx",
+    "frontend/src/providers/providers.ts",
+    "frontend/src/utils/artifacts.ts",
+    "frontend/src/utils/share.ts",
     "project_state.json",
     "scratch/component-selection.json",
     "spec.md",

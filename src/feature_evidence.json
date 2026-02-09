@@ -2,12 +2,11 @@
   "kind": "feature_evidence_report",
   "features": [
     {
-      "featureId": "feature-improve-user-facing-error-handling-for-backend-call-failures-that-return-reject-code-5-ic0508-canister-is-stopped-so-the-ui-shows-a-clear-english-explanation-and-next-steps-instead-of-the-raw-replica-rejection-payload",
-      "featureTitle": "Improve user-facing error handling for backend call failures that return 'Reject code: 5' / 'IC0508' / 'Canister … is stopped' so the UI shows a clear English explanation and next steps instead of the raw replica rejection payload.",
+      "featureId": "feature-replace-the-current-placeholder-workflow-ui-disabled-buttons-not-integrated-yet-callouts-with-working-execution-flows-that-run-once-a-provider-credential-is-configured-starting-with-fal-ai-image-generation-and-then-applying-the-same-execute-show-result-download-share-pattern-across-all-providers-according-to-each-provider-s-declared-workflowtype-capabilities",
+      "featureTitle": "Replace the current placeholder workflow UI (disabled buttons + “Not Integrated Yet” callouts) with working execution flows that run once a provider credential is configured, starting with Fal.ai image generation and then applying the same “execute → show result → download → share” pattern across all providers according to each provider’s declared workflowType/capabilities.",
       "files": [
-        "frontend/src/components/chat/ChatbotCommandCenter.tsx",
-        "frontend/src/components/keys/ProviderKeyManager.tsx",
-        "frontend/src/utils/backendErrorMessages.ts"
+        "frontend/src/components/providers/ProviderToolsOptionsSection.tsx",
+        "frontend/src/pages/providers/GenericProviderPage.tsx"
       ],
       "components": [
         "authorization@4.0.0",
@@ -20,16 +19,16 @@
         "github-export-icp-cli@1.0.0"
       ],
       "testIds": [
-        "REQ-29"
+        "REQ-33"
       ],
       "confidence": "high"
     },
     {
-      "featureId": "feature-update-providerkeymanager-to-classify-and-display-backend-errors-from-the-save-mutation-in-a-user-friendly-way-including-a-dedicated-handling-path-for-ic0508-reject-code-5-errors-and-to-keep-the-user-in-a-recoverable-state-no-stuck-spinners-actionable-retry-guidance",
-      "featureTitle": "Update ProviderKeyManager to classify and display backend errors from the save mutation in a user-friendly way, including a dedicated handling path for IC0508/Reject code 5 errors, and to keep the user in a recoverable state (no stuck spinners, actionable retry guidance).",
+      "featureId": "feature-implement-fal-ai-image-generation-end-to-end-support-prompt-input-multi-model-selection-generate-show-preview-download-and-share-matching-the-workflow-shown-in-the-uploaded-screenshot",
+      "featureTitle": "Implement Fal.ai image generation end-to-end: support prompt input, multi-model selection, generate, show preview, download, and share, matching the workflow shown in the uploaded screenshot.",
       "files": [
-        "frontend/src/components/keys/ProviderKeyManager.tsx",
-        "frontend/src/hooks/keys/useProviderKey.ts"
+        "frontend/src/components/providers/ProviderToolsOptionsSection.tsx",
+        "frontend/src/providers/providers.ts"
       ],
       "components": [
         "authorization@4.0.0",
@@ -42,16 +41,16 @@
         "github-export-icp-cli@1.0.0"
       ],
       "testIds": [
-        "REQ-30"
+        "REQ-37"
       ],
       "confidence": "high"
     },
     {
-      "featureId": "feature-extend-backendconnectionalert-to-recognize-and-explain-the-canister-stopped-class-of-errors-ic0508-reject-code-5-with-tailored-english-guidance-and-ensure-it-remains-usable-for-both-authenticated-and-unauthenticated-states",
-      "featureTitle": "Extend BackendConnectionAlert to recognize and explain the 'canister stopped' class of errors (IC0508 / Reject code: 5) with tailored English guidance, and ensure it remains usable for both authenticated and unauthenticated states.",
+      "featureId": "feature-upgrade-providertoolsoptionssection-so-that-for-workflowtype-values-image-generation-video-generation-integration-app-builder-custom-the-primary-action-buttons-are-functional-not-disabled-when-requirements-are-met-and-they-call-the-backend-workflow-execution-apis-using-the-optionfields-as-inputs-excluding-secrets",
+      "featureTitle": "Upgrade ProviderToolsOptionsSection so that for workflowType values (image-generation, video-generation, integration, app-builder, custom) the primary action buttons are functional (not disabled) when requirements are met, and they call the backend workflow execution APIs using the optionFields as inputs (excluding secrets).",
       "files": [
-        "frontend/src/components/common/BackendConnectionAlert.tsx",
-        "frontend/src/utils/backendErrorMessages.ts"
+        "frontend/src/components/providers/ProviderToolsOptionsSection.tsx",
+        "frontend/src/hooks/workflows/useWorkflowExecution.ts"
       ],
       "components": [
         "authorization@4.0.0",
@@ -64,18 +63,17 @@
         "github-export-icp-cli@1.0.0"
       ],
       "testIds": [
-        "REQ-31"
+        "REQ-38"
       ],
       "confidence": "high"
     },
     {
-      "featureId": "feature-ensure-all-actor-dependent-provider-flows-are-gated-on-the-existing-usebackendactor-readiness-signals-isready-isconnecting-so-the-ui-never-attempts-provider-key-mutations-or-provider-chat-mutations-while-still-connecting-and-surfaces-the-still-connecting-to-the-backend-message-instead",
-      "featureTitle": "Ensure all actor-dependent provider flows are gated on the existing useBackendActor readiness signals (isReady / isConnecting) so the UI never attempts provider-key mutations or provider-chat mutations while still connecting, and surfaces the 'Still connecting to the backend…' message instead.",
+      "featureId": "feature-implement-a-reusable-generation-result-ui-pattern-used-by-image-video-workflows-shows-run-status-queued-running-succeeded-failed-progress-messaging-when-available-the-artifact-preview-image-video-and-action-buttons-for-download-share",
+      "featureTitle": "Implement a reusable “Generation Result” UI pattern used by image/video workflows: shows run status (queued/running/succeeded/failed), progress messaging when available, the artifact preview (image/video), and action buttons for download/share.",
       "files": [
-        "frontend/src/components/chat/ChatbotCommandCenter.tsx",
-        "frontend/src/components/keys/ProviderKeyManager.tsx",
-        "frontend/src/components/providers/ProviderActionGuard.tsx",
-        "frontend/src/hooks/chat/useProviderChat.ts"
+        "frontend/src/components/workflows/GenerationResult.tsx",
+        "frontend/src/utils/artifacts.ts",
+        "frontend/src/utils/share.ts"
       ],
       "components": [
         "authorization@4.0.0",
@@ -88,7 +86,74 @@
         "github-export-icp-cli@1.0.0"
       ],
       "testIds": [
-        "REQ-32"
+        "REQ-39"
+      ],
+      "confidence": "high"
+    },
+    {
+      "featureId": "feature-apply-the-same-execution-approach-across-all-providers-declared-in-the-frontend-provider-registry-frontend-src-providers-providers-ts-for-each-provider-render-and-execute-the-workflow-corresponding-to-its-workflowtype-using-backend-execution-apis-so-that-generate-execute-build-app-actions-actually-run-when-keys-are-configured",
+      "featureTitle": "Apply the same execution approach across all providers declared in the frontend provider registry (frontend/src/providers/providers.ts): for each provider, render and execute the workflow corresponding to its workflowType using backend execution APIs, so that “Generate/Execute/Build App” actions actually run when keys are configured.",
+      "files": [
+        "frontend/src/components/providers/ProviderToolsOptionsSection.tsx",
+        "frontend/src/components/workflows/ExecutionResultPanel.tsx"
+      ],
+      "components": [
+        "authorization@4.0.0",
+        "blob-storage@4.0.0",
+        "http-outcalls@3.0.0",
+        "core-infrastructure@1.0.2",
+        "shadcn-ui@1.0.0",
+        "build-template-react@1.0.0",
+        "initial-app@1.0.0",
+        "github-export-icp-cli@1.0.0"
+      ],
+      "testIds": [
+        "REQ-40"
+      ],
+      "confidence": "high"
+    },
+    {
+      "featureId": "feature-ensure-all-new-workflow-execution-ui-and-hooks-are-gated-on-the-existing-backend-readiness-signals-usebackendactor-isready-isconnecting-and-provider-key-existence-useproviderkey-and-provide-clear-english-messaging-when-the-backend-is-still-connecting-or-unavailable",
+      "featureTitle": "Ensure all new workflow execution UI and hooks are gated on the existing backend readiness signals (useBackendActor: isReady/isConnecting) and provider key existence (useProviderKey), and provide clear English messaging when the backend is still connecting or unavailable.",
+      "files": [
+        "frontend/src/components/providers/ProviderToolsOptionsSection.tsx",
+        "frontend/src/hooks/workflows/useWorkflowExecution.ts"
+      ],
+      "components": [
+        "authorization@4.0.0",
+        "blob-storage@4.0.0",
+        "http-outcalls@3.0.0",
+        "core-infrastructure@1.0.2",
+        "shadcn-ui@1.0.0",
+        "build-template-react@1.0.0",
+        "initial-app@1.0.0",
+        "github-export-icp-cli@1.0.0"
+      ],
+      "testIds": [
+        "REQ-41"
+      ],
+      "confidence": "high"
+    },
+    {
+      "featureId": "feature-add-a-generation-history-section-on-relevant-provider-pages-image-video-workflows-that-lists-recent-runs-for-that-provider-for-the-current-user-and-allows-re-downloading-artifacts-and-reusing-a-run-s-parameters-e-g-reinsert-prompt-model-into-inputs",
+      "featureTitle": "Add a “Generation History” section on relevant provider pages (image/video workflows) that lists recent runs for that provider for the current user and allows re-downloading artifacts and reusing a run’s parameters (e.g., reinsert prompt/model into inputs).",
+      "files": [
+        "frontend/src/components/providers/ProviderToolsOptionsSection.tsx",
+        "frontend/src/components/workflows/GenerationHistory.tsx",
+        "frontend/src/hooks/workflows/useWorkflowRuns.ts"
+      ],
+      "components": [
+        "authorization@4.0.0",
+        "blob-storage@4.0.0",
+        "http-outcalls@3.0.0",
+        "core-infrastructure@1.0.2",
+        "shadcn-ui@1.0.0",
+        "build-template-react@1.0.0",
+        "initial-app@1.0.0",
+        "github-export-icp-cli@1.0.0"
+      ],
+      "testIds": [
+        "REQ-42"
       ],
       "confidence": "high"
     }

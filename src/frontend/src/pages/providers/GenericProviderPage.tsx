@@ -1,123 +1,134 @@
-import { useState } from 'react';
+import { useParams } from '@tanstack/react-router';
+import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
+import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
+import { Badge } from '@/components/ui/badge';
 import { getProviderById } from '@/providers/providers';
 import ProviderKeyManager from '@/components/keys/ProviderKeyManager';
 import ChatbotCommandCenter from '@/components/chat/ChatbotCommandCenter';
-import ProviderActionGuard from '@/components/providers/ProviderActionGuard';
 import RecommendedPrompts from '@/components/providers/RecommendedPrompts';
 import ProviderToolsOptionsSection from '@/components/providers/ProviderToolsOptionsSection';
-import ErrorBoundary from '@/components/common/ErrorBoundary';
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
-import { Badge } from '@/components/ui/badge';
-import { Button } from '@/components/ui/button';
-import { useParams, useNavigate } from '@tanstack/react-router';
-import { AlertCircle } from 'lucide-react';
+import ProviderActionGuard from '@/components/providers/ProviderActionGuard';
+import { useResolvedProviderDisplayName } from '@/hooks/providers/useResolvedProviderDisplayName';
+import { useState } from 'react';
 
 interface GenericProviderPageProps {
   providerId?: string;
 }
 
-export default function GenericProviderPage({ providerId: overrideProviderId }: GenericProviderPageProps) {
-  const params = useParams({ strict: false }) as { providerId?: string };
-  const navigate = useNavigate();
-  const providerId = overrideProviderId || params.providerId;
-  const provider = providerId ? getProviderById(providerId) : null;
+export default function GenericProviderPage({ providerId: propProviderId }: GenericProviderPageProps) {
+  const params = useParams({ strict: false });
+  const providerId = propProviderId || (params as any).providerId;
+
+  const provider = getProviderById(providerId);
+  const displayName = useResolvedProviderDisplayName(providerId);
   const [draftMessage, setDraftMessage] = useState('');
-
-  if (!provider) {
-    return (
-      <div className="container mx-auto space-y-6 px-4 py-6 sm:px-6">
-        <div className="flex flex-col items-center justify-center rounded-lg border border-destructive/50 bg-destructive/10 p-8 text-center">
-          <AlertCircle className="mb-4 h-16 w-16 text-destructive" />
-          <h1 className="mb-2 text-2xl font-bold">Provider Not Found</h1>
-          <p className="mb-4 text-muted-foreground">
-            The requested provider "{providerId || 'unknown'}" does not exist.
-          </p>
-          <Button onClick={() => navigate({ to: '/' })}>
-            Return to Provider Hub
-          </Button>
-        </div>
-      </div>
-    );
-  }
-
-  const Icon = provider.icon;
 
   const handleSelectPrompt = (prompt: string) => {
     setDraftMessage(prompt);
   };
 
+  if (!provider) {
+    return (
+      <div className="container mx-auto px-4 py-8">
+        <Card>
+          <CardHeader>
+            <CardTitle>Provider Not Found</CardTitle>
+            <CardDescription>
+              The provider "{providerId}" could not be found.
+            </CardDescription>
+          </CardHeader>
+        </Card>
+      </div>
+    );
+  }
+
+  const Icon = provider.icon;
+  const hasChat = provider.workflowType === 'chat';
+  const hasWorkflow = provider.workflowType && provider.workflowType !== 'chat';
+
   return (
-    <div className="container mx-auto space-y-6 px-4 py-6 sm:px-6">
-      {/* Provider Header - Always visible */}
-      <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:gap-4">
-        <div className="flex h-12 w-12 items-center justify-center rounded-lg bg-primary/10 sm:h-16 sm:w-16">
-          <Icon className="h-6 w-6 text-primary sm:h-8 sm:w-8" />
+    <div className="container mx-auto px-4 py-8 space-y-8">
+      {/* Header */}
+      <div className="space-y-4">
+        <div className="flex items-center gap-4">
+          <div className="p-3 rounded-lg bg-primary/10">
+            <Icon className="h-8 w-8 text-primary" />
+          </div>
+          <div>
+            <h1 className="text-3xl font-bold">{displayName}</h1>
+            <p className="text-muted-foreground">{provider.description}</p>
+          </div>
         </div>
-        <div>
-          <h1 className="text-2xl font-bold sm:text-3xl">{provider.displayName}</h1>
-          <p className="text-sm text-muted-foreground sm:text-base">{provider.description}</p>
+
+        {/* Capabilities */}
+        <div className="flex flex-wrap gap-2">
+          {provider.capabilities.map((capability) => (
+            <Badge key={capability} variant="secondary">
+              {capability}
+            </Badge>
+          ))}
         </div>
       </div>
 
-      {/* Capabilities - Always visible */}
-      <Card>
-        <CardHeader>
-          <CardTitle>Capabilities</CardTitle>
-          <CardDescription>What this provider can do</CardDescription>
-        </CardHeader>
-        <CardContent>
-          <div className="flex flex-wrap gap-2">
-            {provider.capabilities.map((cap) => (
-              <Badge key={cap} variant="secondary">
-                {cap}
-              </Badge>
-            ))}
-          </div>
-        </CardContent>
-      </Card>
+      {/* Key Management */}
+      <ProviderKeyManager
+        providerId={provider.id}
+        providerName={provider.name}
+        credentialLabel={provider.credentialLabel}
+        credentialPlaceholder={provider.credentialPlaceholder}
+      />
 
-      {/* Key Manager - Always visible, handles its own connection state */}
-      <ErrorBoundary>
-        <ProviderKeyManager 
-          providerId={provider.id} 
-          providerName={provider.displayName}
-          credentialLabel={provider.credentialLabel}
-          credentialPlaceholder={provider.credentialPlaceholder}
-        />
-      </ErrorBoundary>
+      {/* Main Content */}
+      <Tabs defaultValue={hasChat ? 'chat' : 'tools'} className="space-y-6">
+        <TabsList>
+          {hasChat && <TabsTrigger value="chat">Chat</TabsTrigger>}
+          {hasWorkflow && <TabsTrigger value="tools">Tools & Options</TabsTrigger>}
+        </TabsList>
 
-      {/* Provider Actions - Guarded by key existence and connection state */}
-      <ProviderActionGuard providerId={provider.id} providerName={provider.displayName}>
-        <div className="space-y-6">
-          {provider.recommendedPrompts && provider.recommendedPrompts.length > 0 && (
-            <ErrorBoundary>
+        {hasChat && (
+          <TabsContent value="chat" className="space-y-6">
+            {/* Recommended Prompts */}
+            {provider.recommendedPrompts && provider.recommendedPrompts.length > 0 && (
               <RecommendedPrompts
                 prompts={provider.recommendedPrompts}
                 onSelectPrompt={handleSelectPrompt}
               />
-            </ErrorBoundary>
-          )}
+            )}
 
-          <ErrorBoundary>
-            <ChatbotCommandCenter 
-              providerId={provider.id} 
-              providerName={provider.displayName}
-              draftMessage={draftMessage}
-              onDraftChange={setDraftMessage}
-            />
-          </ErrorBoundary>
+            {/* Chat Interface */}
+            <ProviderActionGuard providerId={provider.id} providerName={displayName}>
+              <ChatbotCommandCenter
+                providerId={provider.id}
+                providerName={displayName}
+                draftMessage={draftMessage}
+                onDraftChange={setDraftMessage}
+              />
+            </ProviderActionGuard>
+          </TabsContent>
+        )}
 
-          {provider.workflowType && provider.workflowType !== 'chat' && (
-            <ErrorBoundary>
+        {hasWorkflow && (
+          <TabsContent value="tools" className="space-y-6">
+            {/* Recommended Prompts */}
+            {provider.recommendedPrompts && provider.recommendedPrompts.length > 0 && (
+              <RecommendedPrompts
+                prompts={provider.recommendedPrompts}
+                onSelectPrompt={handleSelectPrompt}
+              />
+            )}
+
+            {/* Tools & Options */}
+            <ProviderActionGuard providerId={provider.id} providerName={displayName}>
               <ProviderToolsOptionsSection
-                providerName={provider.displayName}
-                workflowType={provider.workflowType}
+                providerId={provider.id}
+                providerName={displayName}
+                workflowType={provider.workflowType!}
                 optionFields={provider.optionFields}
               />
-            </ErrorBoundary>
-          )}
-        </div>
-      </ProviderActionGuard>
+            </ProviderActionGuard>
+          </TabsContent>
+        )}
+      </Tabs>
     </div>
   );
 }

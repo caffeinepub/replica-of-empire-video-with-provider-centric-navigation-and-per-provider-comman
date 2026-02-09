@@ -1,19 +1,21 @@
 {
   "schemaVersion": "1.0.0",
-  "projectStateVersion": 15,
-  "summary": "Replica of the Empire Video+ app, extended with a provider-centric UI where each AI provider has its own dedicated page with its own chatbot/command box and provider-specific options/workflows tailored to that provider’s capabilities (e.g., app-building vs video generation), including recommended prompts.",
+  "projectStateVersion": 17,
+  "summary": "Replica of the Empire Video+ app, extended with a provider-centric UI where each AI provider has its own dedicated page with its own chatbot/command box and provider-specific options/workflows tailored to that provider’s capabilities, and with real provider API integrations so workflows (e.g., image generation) actually execute once keys are uploaded (including multi-model support where applicable).",
   "architectural_notes": [
     "Adopt a provider-module architecture (routing + UI + services per provider) so each provider page can be isolated while sharing common components.",
     "Persist chatbot context/history per provider (separate storage namespaces/keys per provider) to prevent cross-provider context mixing.",
     "Provider registry should be data-driven and support both fixed providers and user-configurable custom slots (name + key) as first-class entries.",
     "Each provider page should include a capability summary/list specific to that provider (even if initially static/placeholder).",
     "Make provider pages capability-driven: render provider-specific UI modules/workflows (e.g., app builder, video generator) based on provider capability metadata rather than a one-size-fits-all page.",
-    "Maintain a per-provider library of recommended prompt templates tied to capabilities and surface them contextually on each provider page."
+    "Maintain a per-provider library of recommended prompt templates tied to capabilities and surface them contextually on each provider page.",
+    "Replace 'Not Integrated Yet' placeholders with capability-driven provider execution adapters/services so provider pages can perform real API calls once credentials are present (including multi-model selection support where applicable)."
   ],
   "known_issues": [
     "Fal.ai provider is not working (provider page/flow failing to function as expected).",
     "Fal.ai upload/action fails with error \"Actor is not available\" when trying to use/upload with Fal.ai key.",
-    "Fal.ai key save can fail when backend canister is stopped (Reject code 5 / IC0508), causing 'Actor is not available' errors until actor/canister is running."
+    "Fal.ai key save can fail when backend canister is stopped (Reject code 5 / IC0508), causing 'Actor is not available' errors until actor/canister is running.",
+    "Image generation UI is currently a placeholder ('Not Integrated Yet'); clicking Generate does not call provider APIs (e.g., Fal.ai) yet."
   ],
   "isFixRequest": true,
   "existing_features": [
@@ -264,6 +266,62 @@
         "REQ-32"
       ],
       "version": 1
+    },
+    {
+      "id": "feature-replace-the-current-placeholder-workflow-ui-disabled-buttons-not-integrated-yet-callouts-with-working-execution-flows-that-run-once-a-provider-credential-is-configured-starting-with-fal-ai-image-generation-and-then-applying-the-same-execute-show-result-download-share-pattern-across-all-providers-according-to-each-provider-s-declared-workflowtype-capabilities",
+      "title": "Replace the current placeholder workflow UI (disabled buttons + “Not Integrated Yet” callouts) with working execution flows that run once a provider credential is configured, starting with Fal.ai image generation and then applying the same “execute → show result → download → share” pattern across all providers according to each provider’s declared workflowType/capabilities.",
+      "reqIds": [
+        "REQ-33"
+      ],
+      "version": 1
+    },
+    {
+      "id": "feature-implement-fal-ai-image-generation-end-to-end-support-prompt-input-multi-model-selection-generate-show-preview-download-and-share-matching-the-workflow-shown-in-the-uploaded-screenshot",
+      "title": "Implement Fal.ai image generation end-to-end: support prompt input, multi-model selection, generate, show preview, download, and share, matching the workflow shown in the uploaded screenshot.",
+      "reqIds": [
+        "REQ-37"
+      ],
+      "version": 1
+    },
+    {
+      "id": "feature-upgrade-providertoolsoptionssection-so-that-for-workflowtype-values-image-generation-video-generation-integration-app-builder-custom-the-primary-action-buttons-are-functional-not-disabled-when-requirements-are-met-and-they-call-the-backend-workflow-execution-apis-using-the-optionfields-as-inputs-excluding-secrets",
+      "title": "Upgrade ProviderToolsOptionsSection so that for workflowType values (image-generation, video-generation, integration, app-builder, custom) the primary action buttons are functional (not disabled) when requirements are met, and they call the backend workflow execution APIs using the optionFields as inputs (excluding secrets).",
+      "reqIds": [
+        "REQ-38"
+      ],
+      "version": 1
+    },
+    {
+      "id": "feature-implement-a-reusable-generation-result-ui-pattern-used-by-image-video-workflows-shows-run-status-queued-running-succeeded-failed-progress-messaging-when-available-the-artifact-preview-image-video-and-action-buttons-for-download-share",
+      "title": "Implement a reusable “Generation Result” UI pattern used by image/video workflows: shows run status (queued/running/succeeded/failed), progress messaging when available, the artifact preview (image/video), and action buttons for download/share.",
+      "reqIds": [
+        "REQ-39"
+      ],
+      "version": 1
+    },
+    {
+      "id": "feature-apply-the-same-execution-approach-across-all-providers-declared-in-the-frontend-provider-registry-frontend-src-providers-providers-ts-for-each-provider-render-and-execute-the-workflow-corresponding-to-its-workflowtype-using-backend-execution-apis-so-that-generate-execute-build-app-actions-actually-run-when-keys-are-configured",
+      "title": "Apply the same execution approach across all providers declared in the frontend provider registry (frontend/src/providers/providers.ts): for each provider, render and execute the workflow corresponding to its workflowType using backend execution APIs, so that “Generate/Execute/Build App” actions actually run when keys are configured.",
+      "reqIds": [
+        "REQ-40"
+      ],
+      "version": 1
+    },
+    {
+      "id": "feature-ensure-all-new-workflow-execution-ui-and-hooks-are-gated-on-the-existing-backend-readiness-signals-usebackendactor-isready-isconnecting-and-provider-key-existence-useproviderkey-and-provide-clear-english-messaging-when-the-backend-is-still-connecting-or-unavailable",
+      "title": "Ensure all new workflow execution UI and hooks are gated on the existing backend readiness signals (useBackendActor: isReady/isConnecting) and provider key existence (useProviderKey), and provide clear English messaging when the backend is still connecting or unavailable.",
+      "reqIds": [
+        "REQ-41"
+      ],
+      "version": 1
+    },
+    {
+      "id": "feature-add-a-generation-history-section-on-relevant-provider-pages-image-video-workflows-that-lists-recent-runs-for-that-provider-for-the-current-user-and-allows-re-downloading-artifacts-and-reusing-a-run-s-parameters-e-g-reinsert-prompt-model-into-inputs",
+      "title": "Add a “Generation History” section on relevant provider pages (image/video workflows) that lists recent runs for that provider for the current user and allows re-downloading artifacts and reusing a run’s parameters (e.g., reinsert prompt/model into inputs).",
+      "reqIds": [
+        "REQ-42"
+      ],
+      "version": 1
     }
   ],
   "new_feature_requests": [
@@ -321,6 +379,36 @@
       "id": "AR-13",
       "summary": "Provider-specific capability-driven page layouts and workflows: each provider page should expose tools/options aligned to that provider’s capabilities (e.g., app-builder setup, video generation with download/send actions) and include recommended prompt templates per provider",
       "reqIds": [],
+      "status": "pending"
+    },
+    {
+      "id": "AR-14",
+      "summary": "Implement real provider workflow execution (not placeholders) once keys are uploaded, starting with Fal.ai image generation (prompt, model selection/multi-model, generate, download/share) and replicating capability-appropriate workflows across all providers",
+      "reqIds": [],
+      "status": "pending"
+    },
+    {
+      "id": "AR-16",
+      "summary": "Implement backend workflow execution APIs (single-actor Motoko) that allow the frontend to request provider workflow runs (image/video/integration/app-builder), while keeping provider credentials stored only in the backend and never returning stored secret values to the UI.",
+      "reqIds": [
+        "REQ-34"
+      ],
+      "status": "pending"
+    },
+    {
+      "id": "AR-17",
+      "summary": "Add backend state for per-user workflow run history (per provider) including request parameters (non-secret), timestamps, status, error (sanitized), and references to any stored output artifacts (e.g., image/video blobs) so users can download/share after generation completes.",
+      "reqIds": [
+        "REQ-35"
+      ],
+      "status": "pending"
+    },
+    {
+      "id": "AR-18",
+      "summary": "Use canister-side storage for generated artifacts (images/videos) so download/share works without requiring the frontend to store provider keys or call third-party providers directly from the browser.",
+      "reqIds": [
+        "REQ-36"
+      ],
       "status": "pending"
     }
   ],

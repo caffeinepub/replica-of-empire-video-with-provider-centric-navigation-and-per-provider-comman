@@ -1,78 +1,127 @@
 {
   "kind": "spec_vs_diff_report",
   "version": "1.0",
-  "generatedAt": "2026-02-09T02:09:40.835Z",
-  "summary": "Diff adds a shared backend error classification utility and updates ProviderKeyManager, BackendConnectionAlert, and provider chat flows to gate calls on backend readiness and to surface friendlier error messages (including stopped-canister detection). However, BackendConnectionAlert does not offer “Retry Connection” when unauthenticated as required, and the diff summary indicates several unrelated UI/routing/provider-registry enhancements that were not requested.",
+  "generatedAt": "2026-02-09T02:31:22.900Z",
+  "summary": "The diff adds frontend workflow execution UI components (GenerationResult/History, ExecutionResultPanel) and React Query hooks that call new backend actor methods (executeWorkflow/getWorkflowRuns/updateWorkflowRun), plus a backend stable-state migration introducing persisted workflowRuns. However, the diff summary does not show the backend workflow execution/artifact APIs being implemented, and artifact download/storage is explicitly left as a placeholder on the frontend, so the end-to-end “execute → show result → download/share” flow (especially Fal.ai image generation) is not fully implemented based on the provided evidence.",
   "missing_requirements": [
     {
-      "id": "REQ-31",
-      "requirement": "When BackendConnectionAlert receives a stopped-canister style error and the user is unauthenticated, it should suggest 'Retry Connection' and 'Reload Page' as next steps (and login when unauthenticated).",
-      "reason": "BackendConnectionAlert shows 'Log In' (instead of 'Retry Connection') when unauthenticated; it always shows 'Reload Page', but does not provide 'Retry Connection' in the unauthenticated branch.",
+      "id": "REQ-34",
+      "requirement": "Implement backend workflow execution APIs: create run, query status, fetch artifacts/outputs without exposing stored provider keys; enforce #user authorization and use existing per-user provider key storage.",
+      "reason": "Frontend calls actor.executeWorkflow, actor.getWorkflowRuns, and actor.updateWorkflowRun, but the diff summary does not show these methods (or any artifact fetch API) implemented in backend/main.mo; only migration state types are visible.",
       "evidence": [
-        "frontend/src/components/common/BackendConnectionAlert.tsx"
+        "frontend/src/hooks/workflows/useWorkflowExecution.ts",
+        "frontend/src/hooks/workflows/useWorkflowRuns.ts",
+        "backend/main.mo (truncated)",
+        "backend/migration.mo"
+      ]
+    },
+    {
+      "id": "REQ-36",
+      "requirement": "Use canister-side storage for generated artifacts and provide an API to retrieve an artifact by id so download/share works without the frontend calling providers directly.",
+      "reason": "Frontend artifact utilities are explicitly placeholders: getArtifactDirectURL returns the blobId as-is and downloadArtifact throws 'not yet implemented', indicating blob retrieval/download is not wired to canister storage APIs.",
+      "evidence": [
+        "frontend/src/utils/artifacts.ts",
+        "frontend/src/components/workflows/GenerationResult.tsx (truncated)",
+        "frontend/src/components/workflows/GenerationHistory.tsx (truncated)"
+      ]
+    },
+    {
+      "id": "REQ-37",
+      "requirement": "Implement Fal.ai image generation end-to-end: prompt input, multi-model selection, generate, show preview, download, share.",
+      "reason": "While the provider registry summary mentions Fal.ai multi-model support, the shown workflow execution path is generic and artifact download is not implemented; there is no evidence of a real Fal.ai backend integration producing stored blobs for preview/download/share.",
+      "evidence": [
+        "frontend/src/providers/providers.ts (truncated)",
+        "frontend/src/utils/artifacts.ts",
+        "frontend/src/hooks/workflows/useWorkflowExecution.ts",
+        "backend/main.mo (truncated)"
+      ]
+    },
+    {
+      "id": "REQ-33",
+      "requirement": "Replace placeholder workflow UI (“Not Integrated Yet”) with working execution flows; Fal.ai image generation should not show the callout and should run for real once credential exists.",
+      "reason": "The diff adds execution UI, but there is no evidence that the existing NotIntegratedCallout is removed/avoided for Fal.ai specifically, and core execution+artifact retrieval appears incomplete (download placeholder; backend methods not evidenced).",
+      "evidence": [
+        "frontend/src/components/common/NotIntegratedCallout.tsx (frontend-file-summaries.txt)",
+        "frontend/src/components/providers/ProviderToolsOptionsSection.tsx (truncated)",
+        "frontend/src/utils/artifacts.ts"
+      ]
+    },
+    {
+      "id": "REQ-38",
+      "requirement": "Upgrade ProviderToolsOptionsSection so primary workflow actions are enabled when ProviderActionGuard passes (backend ready + key exists) and call backend execution APIs; remove NotIntegratedCallout for wired cards (at minimum Fal.ai image-generation).",
+      "reason": "ProviderToolsOptionsSection only checks backend readiness (isReady) before executing; the diff summary does not show gating on provider key existence (useProviderKey / ProviderActionGuard pass condition) within the component, nor explicit removal of NotIntegratedCallout usage for workflow cards.",
+      "evidence": [
+        "frontend/src/components/providers/ProviderToolsOptionsSection.tsx (truncated)"
+      ]
+    },
+    {
+      "id": "REQ-39",
+      "requirement": "Reusable Generation Result pattern must support preview plus functional Download and Share with correct filenames/extensions and Web Share API fallback.",
+      "reason": "GenerationResult/History UI exists and calls download/share helpers, but downloadArtifact is not implemented and direct URLs are placeholders, so Download/Share is not functional as required.",
+      "evidence": [
+        "frontend/src/components/workflows/GenerationResult.tsx (truncated)",
+        "frontend/src/components/workflows/GenerationHistory.tsx (truncated)",
+        "frontend/src/utils/artifacts.ts",
+        "frontend/src/utils/share.ts"
+      ]
+    },
+    {
+      "id": "REQ-40",
+      "requirement": "Apply the same execution approach across all providers with workflowType using backend execution APIs so actions actually run when keys are configured; integration/app-builder show structured results.",
+      "reason": "Frontend wiring is generic, but there is no evidence of backend implementations per workflowType/provider (image/video/integration/app-builder/custom), nor evidence of structured results for integration/app-builder beyond a generic ExecutionResultPanel.",
+      "evidence": [
+        "frontend/src/components/providers/ProviderToolsOptionsSection.tsx (truncated)",
+        "frontend/src/hooks/workflows/useWorkflowExecution.ts",
+        "backend/main.mo (truncated)"
+      ]
+    },
+    {
+      "id": "REQ-41",
+      "requirement": "Gate workflow execution UI on backend readiness signals (isReady/isConnecting) and provider key existence; show clear English messaging when connecting/unavailable; do not run mutations when actor null or isReady false.",
+      "reason": "Hooks correctly block when actor/isReady are false, but ProviderToolsOptionsSection does not show connecting/unavailable messaging ('Connecting to backend…') and does not demonstrate provider-key gating; useWorkflowRuns throws 'Actor not available' (not user-friendly) if actor is null.",
+      "evidence": [
+        "frontend/src/hooks/workflows/useWorkflowExecution.ts",
+        "frontend/src/hooks/workflows/useWorkflowRuns.ts",
+        "frontend/src/components/providers/ProviderToolsOptionsSection.tsx (truncated)"
       ]
     }
   ],
   "hallucinated_features": [
     {
-      "description": "Added/changed routing to include dedicated static routes for /providers/fal-ai and /providers/fal (alias) to render GenericProviderPage with providerId override.",
-      "reason": "BuildRequest is limited to backend readiness gating and error messaging around connectivity/credential saving; it explicitly lists Fal.ai inference as a non-goal and does not request routing changes.",
+      "description": "Backend API for updating workflow runs from the frontend (actor.updateWorkflowRun) and corresponding client hook useWorkflowRunUpdate.",
+      "reason": "REQ-34 specifies create run, query status, and fetch artifacts/outputs; it does not request a client-exposed 'update run' API (status/output/duration) callable from the UI.",
       "evidence": [
-        "frontend-file-summaries.txt (frontend/src/App.tsx summary)"
+        "frontend/src/hooks/workflows/useWorkflowExecution.ts"
       ]
     },
     {
-      "description": "Extended provider registry with workflowType, optionFields, and recommendedPrompts for capability-driven UI across providers.",
-      "reason": "Not requested; BuildRequest forbids changing provider registry IDs and focuses only on reliability/error handling for backend connectivity and credential saving.",
+      "description": "Artifact direct URL behavior implemented as returning blobId 'as-is' with comments stating blob storage integration is not present yet.",
+      "reason": "REQ-36 expects canister-side blob storage integration and artifact retrieval by id; returning the id as a URL is an ad-hoc behavior not requested and contradicts the requirement for proper canister retrieval/download.",
       "evidence": [
-        "frontend-file-summaries.txt (frontend/src/providers/providers.ts summary)"
-      ]
-    },
-    {
-      "description": "Multiple navigation/layout responsiveness changes (AppShell mobile provider navigation state management; TopNav mobile hamburger/collapsible menu; ProviderNav sidebar updates).",
-      "reason": "Not requested; outside the stated scope of backend readiness gating and error messaging.",
-      "evidence": [
-        "frontend-file-summaries.txt (frontend/src/components/layout/AppShell.tsx summary)",
-        "frontend-file-summaries.txt (frontend/src/components/layout/TopNav.tsx summary)",
-        "frontend-file-summaries.txt (frontend/src/components/providers/ProviderNav.tsx summary)"
-      ]
-    },
-    {
-      "description": "Added/changed authentication gating and login/logout behaviors (AuthGate requirement to login before showing content; LoginButton cache clearing).",
-      "reason": "Not requested; BuildRequest explicitly says do not add third-party auth and focuses on error handling/readiness gating rather than changing auth gating UX.",
-      "evidence": [
-        "frontend-file-summaries.txt (frontend/src/components/auth/AuthGate.tsx summary)",
-        "frontend-file-summaries.txt (frontend/src/components/auth/LoginButton.tsx summary)"
-      ]
-    },
-    {
-      "description": "Introduced ProfileSetupModal that stores display name in localStorage as a workaround until a backend method exists.",
-      "reason": "Not requested; outside the scope of Fal.ai key save failure and backend connectivity/error messaging.",
-      "evidence": [
-        "frontend-file-summaries.txt (frontend/src/components/auth/ProfileSetupModal.tsx summary)"
-      ]
-    },
-    {
-      "description": "Added/expanded provider hub and provider-specific pages with recommended prompts and capability-driven tools (ProviderHubPage, OpenAIPage, LTXPage, ReplicatePage, etc.).",
-      "reason": "Not requested; outside the scope of backend readiness/error handling changes.",
-      "evidence": [
-        "frontend-file-summaries.txt (frontend/src/pages/ProviderHubPage.tsx summary)",
-        "frontend-file-summaries.txt (frontend/src/pages/providers/OpenAIPage.tsx summary)",
-        "frontend-file-summaries.txt (frontend/src/pages/providers/LTXPage.tsx summary)",
-        "frontend-file-summaries.txt (frontend/src/pages/providers/ReplicatePage.tsx summary)"
+        "frontend/src/utils/artifacts.ts"
       ]
     }
   ],
-  "confidence": 0.73,
+  "confidence": 0.66,
   "changed_files": [
+    "backend/main.mo",
+    "backend/migration.mo",
     "frontend-file-summaries.txt",
-    "frontend/src/components/chat/ChatbotCommandCenter.tsx",
-    "frontend/src/components/common/BackendConnectionAlert.tsx",
-    "frontend/src/components/keys/ProviderKeyManager.tsx",
-    "frontend/src/components/providers/ProviderActionGuard.tsx",
-    "frontend/src/hooks/chat/useProviderChat.ts",
-    "frontend/src/hooks/keys/useProviderKey.ts",
-    "frontend/src/utils/backendErrorMessages.ts",
+    "frontend/src/components/providers/ProviderToolsOptionsSection.tsx",
+    "frontend/src/components/workflows/ExecutionResultPanel.tsx",
+    "frontend/src/components/workflows/GenerationHistory.tsx",
+    "frontend/src/components/workflows/GenerationResult.tsx",
+    "frontend/src/hooks/workflows/useWorkflowExecution.ts",
+    "frontend/src/hooks/workflows/useWorkflowRuns.ts",
+    "frontend/src/pages/providers/CustomSlotProviderPage.tsx",
+    "frontend/src/pages/providers/GenericProviderPage.tsx",
+    "frontend/src/pages/providers/LTXPage.tsx",
+    "frontend/src/pages/providers/ReplicatePage.tsx",
+    "frontend/src/pages/providers/RunPodPage.tsx",
+    "frontend/src/pages/providers/SlackPage.tsx",
+    "frontend/src/providers/providers.ts",
+    "frontend/src/utils/artifacts.ts",
+    "frontend/src/utils/share.ts",
     "project_state.json"
   ]
 }

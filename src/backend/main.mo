@@ -10,9 +10,9 @@ import Principal "mo:core/Principal";
 import MixinStorage "blob-storage/Mixin";
 import MixinAuthorization "authorization/MixinAuthorization";
 import AccessControl "authorization/access-control";
+import Migration "migration";
 
-
-
+(with migration = Migration.run)
 actor {
   // Key Management Types
   public type APIKey = {
@@ -296,8 +296,133 @@ actor {
     };
   };
 
-  // Remaining functionalities can be extended here.
-  // All methods should include proper authorization checks.
+  // Workflow Execution and History
+  public type WorkflowRunStatus = {
+    #pending;
+    #running;
+    #success;
+    #failed : Text; // Error message
+  };
+
+  public type WorkflowRun = {
+    id : Text;
+    provider : Text;
+    workflowType : Text;
+    status : WorkflowRunStatus;
+    inputs : Text;
+    outputBlobId : ?Text;
+    timestamp : Time.Time;
+    durationNanos : ?Int;
+  };
+
+  let workflowRuns = Map.empty<Principal, Map.Map<Text, List.List<WorkflowRun>>>();
+  var nextWorkflowRunId = 0;
+
+  public shared ({ caller }) func executeWorkflow(provider : Text, workflowType : Text, inputs : Text) : async WorkflowRun {
+    if (not (AccessControl.hasPermission(accessControlState, caller, #user))) {
+      Runtime.trap("Unauthorized: Only users can execute workflows");
+    };
+
+    let runId = nextWorkflowRunId.toText();
+    nextWorkflowRunId += 1;
+
+    let run : WorkflowRun = {
+      id = runId;
+      provider;
+      workflowType;
+      status = #pending;
+      inputs;
+      outputBlobId = null;
+      timestamp = Time.now();
+      durationNanos = null;
+    };
+
+    addWorkflowRunInternal(caller, run);
+    run;
+  };
+
+  public query ({ caller }) func getWorkflowRuns(provider : Text) : async [WorkflowRun] {
+    if (not (AccessControl.hasPermission(accessControlState, caller, #user))) {
+      Runtime.trap("Unauthorized: Only users can access workflow runs");
+    };
+
+    switch (workflowRuns.get(caller)) {
+      case (?userRuns) {
+        switch (userRuns.get(provider)) {
+          case (?runs) { runs.toArray() };
+          case null { [] };
+        };
+      };
+      case null { [] };
+    };
+  };
+
+  public shared ({ caller }) func updateWorkflowRun(runId : Text, status : WorkflowRunStatus, outputBlobId : ?Text, durationNanos : ?Int) : async WorkflowRun {
+    if (not (AccessControl.hasPermission(accessControlState, caller, #user))) {
+      Runtime.trap("Unauthorized: Only users can update workflow runs");
+    };
+
+    switch (workflowRuns.get(caller)) {
+      case (?userRuns) {
+        var found = false;
+        for ((provider, runs) in userRuns.entries()) {
+          let newRuns = runs.map<WorkflowRun, WorkflowRun>(
+            func(run) {
+              if (run.id == runId) {
+                found := true;
+                { run with status; outputBlobId; durationNanos };
+              } else {
+                run;
+              };
+            }
+          );
+          userRuns.add(provider, newRuns);
+        };
+
+        if (not found) {
+          Runtime.trap("Unauthorized: Workflow run not found or does not belong to caller");
+        };
+
+        switch (findWorkflowRun(userRuns, runId)) {
+          case (?updatedRun) { updatedRun };
+          case null { Runtime.trap("Workflow run not found after update"); };
+        };
+      };
+      case null { Runtime.trap("Unauthorized: No workflow runs found for user") };
+    };
+  };
+
+  func addWorkflowRunInternal(user : Principal, run : WorkflowRun) {
+    let userRunsMap = switch (workflowRuns.get(user)) {
+      case (?runs) { runs };
+      case null {
+        let newMap = Map.empty<Text, List.List<WorkflowRun>>();
+        workflowRuns.add(user, newMap);
+        newMap;
+      };
+    };
+
+    let providerRuns = switch (userRunsMap.get(run.provider)) {
+      case (?runs) { runs };
+      case null {
+        let newList = List.empty<WorkflowRun>();
+        userRunsMap.add(run.provider, newList);
+        newList;
+      };
+    };
+    providerRuns.add(run);
+  };
+
+  func findWorkflowRun(userRunsMap : Map.Map<Text, List.List<WorkflowRun>>, runId : Text) : ?WorkflowRun {
+    for ((_, runs) in userRunsMap.entries()) {
+      for (run in runs.values()) {
+        if (run.id == runId) {
+          return ?run;
+        };
+      };
+    };
+    null;
+  };
 
   include MixinStorage();
 
@@ -305,3 +430,4 @@ actor {
     caller;
   };
 };
+

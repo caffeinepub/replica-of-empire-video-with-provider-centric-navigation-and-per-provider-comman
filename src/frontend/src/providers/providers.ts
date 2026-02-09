@@ -59,7 +59,7 @@ export const PROVIDERS: ProviderConfig[] = [
     route: '/providers/replicate',
     workflowType: 'image-generation',
     optionFields: [
-      { id: 'model', label: 'Model', type: 'text', placeholder: 'owner/model:version' },
+      { id: 'model', label: 'Model', type: 'select', options: ['stability-ai/sdxl', 'black-forest-labs/flux-schnell'], defaultValue: 'stability-ai/sdxl' },
       { id: 'prompt', label: 'Prompt', type: 'textarea', placeholder: 'Describe what you want to generate...' },
     ],
     recommendedPrompts: [
@@ -233,6 +233,7 @@ export const PROVIDERS: ProviderConfig[] = [
     route: '/providers/stability-ai',
     workflowType: 'image-generation',
     optionFields: [
+      { id: 'model', label: 'Model', type: 'select', options: ['stable-diffusion-xl-1024-v1-0', 'stable-diffusion-v1-6'], defaultValue: 'stable-diffusion-xl-1024-v1-0' },
       { id: 'prompt', label: 'Image Prompt', type: 'textarea', placeholder: 'Describe the image...' },
       { id: 'negativePrompt', label: 'Negative Prompt', type: 'textarea', placeholder: 'What to avoid...' },
       { id: 'aspectRatio', label: 'Aspect Ratio', type: 'select', options: ['1:1', '16:9', '9:16', '4:3'], defaultValue: '1:1' },
@@ -254,12 +255,14 @@ export const PROVIDERS: ProviderConfig[] = [
     route: '/providers/fal-ai',
     workflowType: 'image-generation',
     optionFields: [
-      { id: 'model', label: 'Model', type: 'text', placeholder: 'fal-ai/flux-pro' },
+      { id: 'model', label: 'Model', type: 'select', options: ['fal-ai/flux-pro', 'fal-ai/flux-dev', 'fal-ai/flux-schnell'], defaultValue: 'fal-ai/flux-pro' },
       { id: 'prompt', label: 'Prompt', type: 'textarea', placeholder: 'Your prompt...' },
     ],
     recommendedPrompts: [
       'High-resolution architectural rendering of a modern building',
       'Character concept art for a video game',
+      'Photorealistic product shot with studio lighting',
+      'Abstract digital art with vibrant colors',
     ],
   },
   {
@@ -290,6 +293,7 @@ export const PROVIDERS: ProviderConfig[] = [
     route: '/providers/leonardo-ai',
     workflowType: 'image-generation',
     optionFields: [
+      { id: 'model', label: 'Model', type: 'select', options: ['Leonardo Diffusion XL', 'Leonardo Vision XL', 'Leonardo Anime XL'], defaultValue: 'Leonardo Diffusion XL' },
       { id: 'prompt', label: 'Image Prompt', type: 'textarea', placeholder: 'Describe your image...' },
       { id: 'style', label: 'Style Preset', type: 'select', options: ['Leonardo Style', 'Anime', 'Photorealistic', 'Digital Art'], defaultValue: 'Leonardo Style' },
     ],

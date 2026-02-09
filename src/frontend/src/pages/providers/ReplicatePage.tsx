@@ -27,7 +27,7 @@ export default function ReplicatePage() {
         </div>
       </div>
 
-      <ProviderKeyManager providerId={provider.id} providerName={provider.displayName} />
+      <ProviderKeyManager providerId={provider.id} providerName={provider.name} />
 
       <ProviderActionGuard providerId={provider.id} providerName={provider.displayName}>
         <div className="space-y-6">
@@ -45,8 +45,9 @@ export default function ReplicatePage() {
             onDraftChange={setDraftMessage}
           />
 
-          {provider.workflowType && (
+          {provider.workflowType && provider.workflowType !== 'chat' && (
             <ProviderToolsOptionsSection
+              providerId={provider.id}
               providerName={provider.displayName}
               workflowType={provider.workflowType}
               optionFields={provider.optionFields}

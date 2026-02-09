@@ -7,6 +7,16 @@ export interface None {
     __kind__: "None";
 }
 export type Option<T> = Some<T> | None;
+export interface WorkflowRun {
+    id: string;
+    status: WorkflowRunStatus;
+    provider: string;
+    inputs: string;
+    timestamp: Time;
+    outputBlobId?: string;
+    workflowType: string;
+    durationNanos?: bigint;
+}
 export interface APIKey {
     key: string;
     provider: string;
@@ -24,6 +34,19 @@ export interface ProviderInfo {
     version: string;
     apiEndpoint: string;
 }
+export type WorkflowRunStatus = {
+    __kind__: "pending";
+    pending: null;
+} | {
+    __kind__: "success";
+    success: null;
+} | {
+    __kind__: "failed";
+    failed: string;
+} | {
+    __kind__: "running";
+    running: null;
+};
 export interface ChatMessage {
     content: string;
     provider: string;
@@ -43,6 +66,7 @@ export interface backendInterface {
     addOrUpdateAPIKey(provider: string, key: string): Promise<void>;
     assignCallerUserRole(user: Principal, role: UserRole): Promise<void>;
     customProviderMetadataExists(providerKey: string): Promise<boolean>;
+    executeWorkflow(provider: string, workflowType: string, inputs: string): Promise<WorkflowRun>;
     getAllAPIKeys(): Promise<Array<[Principal, Array<APIKey>]>>;
     getAllCustomProviderMetadata(): Promise<Array<CustomProviderMetadata>>;
     getAllProviders(): Promise<Array<ProviderInfo>>;
@@ -54,9 +78,11 @@ export interface backendInterface {
     getProviderInfo(provider: string): Promise<ProviderInfo>;
     getProviderKey(provider: string): Promise<APIKey | null>;
     getUserProfile(user: Principal): Promise<UserProfile | null>;
+    getWorkflowRuns(provider: string): Promise<Array<WorkflowRun>>;
     initializeProviders(providerList: Array<ProviderInfo>): Promise<void>;
     isCallerAdmin(): Promise<boolean>;
     providerKeyExists(provider: string): Promise<boolean>;
     setCustomProviderMetadata(providerKey: string, displayName: string): Promise<void>;
     streamChatMessages(provider: string, limit: bigint): Promise<Array<ChatMessage>>;
+    updateWorkflowRun(runId: string, status: WorkflowRunStatus, outputBlobId: string | null, durationNanos: bigint | null): Promise<WorkflowRun>;
 }

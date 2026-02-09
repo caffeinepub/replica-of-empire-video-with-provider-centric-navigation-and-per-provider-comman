@@ -1,25 +1,40 @@
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Textarea } from '@/components/ui/textarea';
 import { Label } from '@/components/ui/label';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
-import NotIntegratedCallout from '@/components/common/NotIntegratedCallout';
-import { Video, Image, Wrench, Download, Share2, Play } from 'lucide-react';
+import { Alert, AlertDescription } from '@/components/ui/alert';
+import { Video, Image, Wrench, Loader2, AlertCircle } from 'lucide-react';
+import { toast } from 'sonner';
 import type { WorkflowType, OptionField } from '@/providers/providers';
+import type { WorkflowRun } from '@/backend';
+import { useWorkflowExecution } from '@/hooks/workflows/useWorkflowExecution';
+import { useWorkflowRuns } from '@/hooks/workflows/useWorkflowRuns';
+import { useBackendActor } from '@/hooks/useBackendActor';
+import GenerationResult from '@/components/workflows/GenerationResult';
+import ExecutionResultPanel from '@/components/workflows/ExecutionResultPanel';
+import GenerationHistory from '@/components/workflows/GenerationHistory';
+import { getUserFriendlyErrorMessage } from '@/utils/backendErrorMessages';
 
 interface ProviderToolsOptionsSectionProps {
+  providerId: string;
   providerName: string;
   workflowType: WorkflowType;
   optionFields?: OptionField[];
 }
 
 export default function ProviderToolsOptionsSection({
+  providerId,
   providerName,
   workflowType,
   optionFields = [],
 }: ProviderToolsOptionsSectionProps) {
+  const { isReady, isConnecting } = useBackendActor();
+  const executeWorkflow = useWorkflowExecution();
+  const { data: runs = [], isLoading: runsLoading } = useWorkflowRuns(providerId);
+
   const [formValues, setFormValues] = useState<Record<string, string | number>>(() => {
     const initial: Record<string, string | number> = {};
     optionFields.forEach((field) => {
@@ -30,14 +45,71 @@ export default function ProviderToolsOptionsSection({
     return initial;
   });
 
+  const [currentRun, setCurrentRun] = useState<WorkflowRun | null>(null);
+
+  // Update current run when runs change
+  useEffect(() => {
+    if (currentRun && runs.length > 0) {
+      const updated = runs.find(r => r.id === currentRun.id);
+      if (updated) {
+        setCurrentRun(updated);
+      }
+    }
+  }, [runs, currentRun]);
+
   const handleFieldChange = (fieldId: string, value: string | number) => {
     setFormValues((prev) => ({ ...prev, [fieldId]: value }));
+  };
+
+  const handleExecute = async () => {
+    if (!isReady) {
+      toast.error('Backend is not ready. Please wait a moment.');
+      return;
+    }
+
+    try {
+      const run = await executeWorkflow.mutateAsync({
+        provider: providerId,
+        workflowType,
+        inputs: formValues,
+      });
+      
+      setCurrentRun(run);
+      toast.success('Workflow started successfully');
+    } catch (error: any) {
+      const message = getUserFriendlyErrorMessage(error);
+      toast.error(message);
+    }
+  };
+
+  const handleReuseRun = (run: WorkflowRun) => {
+    try {
+      const inputs = JSON.parse(run.inputs);
+      setFormValues(inputs);
+      toast.success('Parameters loaded');
+    } catch (e) {
+      toast.error('Failed to load parameters');
+    }
   };
 
   const renderField = (field: OptionField) => {
     const value = formValues[field.id] || '';
 
     switch (field.type) {
+      case 'text':
+        return (
+          <div key={field.id} className="space-y-2">
+            <Label htmlFor={field.id}>{field.label}</Label>
+            <Input
+              id={field.id}
+              type="text"
+              placeholder={field.placeholder}
+              value={value as string}
+              onChange={(e) => handleFieldChange(field.id, e.target.value)}
+            />
+          </div>
+        );
+
       case 'textarea':
         return (
           <div key={field.id} className="space-y-2">
@@ -47,10 +119,11 @@ export default function ProviderToolsOptionsSection({
               placeholder={field.placeholder}
               value={value as string}
               onChange={(e) => handleFieldChange(field.id, e.target.value)}
-              className="min-h-[100px]"
+              rows={4}
             />
           </div>
         );
+
       case 'select':
         return (
           <div key={field.id} className="space-y-2">
@@ -60,7 +133,7 @@ export default function ProviderToolsOptionsSection({
               onValueChange={(val) => handleFieldChange(field.id, val)}
             >
               <SelectTrigger id={field.id}>
-                <SelectValue placeholder={`Select ${field.label.toLowerCase()}`} />
+                <SelectValue placeholder={field.placeholder || 'Select...'} />
               </SelectTrigger>
               <SelectContent>
                 {field.options?.map((option) => (
@@ -72,6 +145,7 @@ export default function ProviderToolsOptionsSection({
             </Select>
           </div>
         );
+
       case 'number':
         return (
           <div key={field.id} className="space-y-2">
@@ -85,187 +159,140 @@ export default function ProviderToolsOptionsSection({
             />
           </div>
         );
+
       default:
-        return (
-          <div key={field.id} className="space-y-2">
-            <Label htmlFor={field.id}>{field.label}</Label>
-            <Input
-              id={field.id}
-              type="text"
-              placeholder={field.placeholder}
-              value={value as string}
-              onChange={(e) => handleFieldChange(field.id, e.target.value)}
-            />
-          </div>
-        );
+        return null;
     }
   };
 
-  const renderToolCard = () => {
+  const getCardIcon = () => {
     switch (workflowType) {
       case 'video-generation':
-        return (
-          <Card>
-            <CardHeader>
-              <CardTitle className="flex items-center gap-2 text-lg sm:text-xl">
-                <Video className="h-5 w-5" />
-                Video Generation
-              </CardTitle>
-              <CardDescription className="text-sm">
-                Configure and generate videos with {providerName}
-              </CardDescription>
-            </CardHeader>
-            <CardContent className="space-y-4">
-              {optionFields.map((field) => renderField(field))}
-              <div className="flex flex-col gap-2 pt-2 sm:flex-row">
-                <Button disabled className="w-full sm:w-auto">
-                  <Play className="mr-2 h-4 w-4" />
-                  Generate Video
-                </Button>
-                <Button disabled variant="outline" className="w-full sm:w-auto">
-                  <Download className="mr-2 h-4 w-4" />
-                  Download
-                </Button>
-                <Button disabled variant="outline" className="w-full sm:w-auto">
-                  <Share2 className="mr-2 h-4 w-4" />
-                  Share
-                </Button>
-              </div>
-              <NotIntegratedCallout
-                feature="Video Generation"
-                description="Video generation, download, and sharing features require client-side API integration which will be implemented in a future release."
-              />
-            </CardContent>
-          </Card>
-        );
-
+        return <Video className="h-5 w-5" />;
       case 'image-generation':
-        return (
-          <Card>
-            <CardHeader>
-              <CardTitle className="flex items-center gap-2 text-lg sm:text-xl">
-                <Image className="h-5 w-5" />
-                Image Generation
-              </CardTitle>
-              <CardDescription className="text-sm">
-                Create images with {providerName}
-              </CardDescription>
-            </CardHeader>
-            <CardContent className="space-y-4">
-              {optionFields.map((field) => renderField(field))}
-              <div className="flex flex-col gap-2 pt-2 sm:flex-row">
-                <Button disabled className="w-full sm:w-auto">
-                  <Play className="mr-2 h-4 w-4" />
-                  Generate Image
-                </Button>
-                <Button disabled variant="outline" className="w-full sm:w-auto">
-                  <Download className="mr-2 h-4 w-4" />
-                  Download
-                </Button>
-                <Button disabled variant="outline" className="w-full sm:w-auto">
-                  <Share2 className="mr-2 h-4 w-4" />
-                  Share
-                </Button>
-              </div>
-              <NotIntegratedCallout
-                feature="Image Generation"
-                description="Image generation, download, and sharing features require client-side API integration which will be implemented in a future release."
-              />
-            </CardContent>
-          </Card>
-        );
-
-      case 'integration':
-        return (
-          <Card>
-            <CardHeader>
-              <CardTitle className="flex items-center gap-2 text-lg sm:text-xl">
-                <Wrench className="h-5 w-5" />
-                Integration Tools
-              </CardTitle>
-              <CardDescription className="text-sm">
-                Connect and automate with {providerName}
-              </CardDescription>
-            </CardHeader>
-            <CardContent className="space-y-4">
-              {optionFields.map((field) => renderField(field))}
-              <div className="flex flex-col gap-2 pt-2 sm:flex-row">
-                <Button disabled className="w-full sm:w-auto">
-                  <Play className="mr-2 h-4 w-4" />
-                  Execute
-                </Button>
-              </div>
-              <NotIntegratedCallout
-                feature={`${providerName} Integration`}
-                description="Integration features require client-side API calls which will be implemented in a future release."
-              />
-            </CardContent>
-          </Card>
-        );
-
-      case 'app-builder':
-        return (
-          <Card>
-            <CardHeader>
-              <CardTitle className="flex items-center gap-2 text-lg sm:text-xl">
-                <Wrench className="h-5 w-5" />
-                App Builder
-              </CardTitle>
-              <CardDescription className="text-sm">
-                Build applications with {providerName}
-              </CardDescription>
-            </CardHeader>
-            <CardContent className="space-y-4">
-              {optionFields.map((field) => renderField(field))}
-              <div className="flex flex-col gap-2 pt-2 sm:flex-row">
-                <Button disabled className="w-full sm:w-auto">
-                  <Play className="mr-2 h-4 w-4" />
-                  Build App
-                </Button>
-              </div>
-              <NotIntegratedCallout
-                feature="App Builder"
-                description="App building features require client-side API integration which will be implemented in a future release."
-              />
-            </CardContent>
-          </Card>
-        );
-
-      case 'custom':
-        if (optionFields.length > 0) {
-          return (
-            <Card>
-              <CardHeader>
-                <CardTitle className="flex items-center gap-2 text-lg sm:text-xl">
-                  <Wrench className="h-5 w-5" />
-                  Custom Tools
-                </CardTitle>
-                <CardDescription className="text-sm">
-                  Configure and execute custom workflows
-                </CardDescription>
-              </CardHeader>
-              <CardContent className="space-y-4">
-                {optionFields.map((field) => renderField(field))}
-                <div className="flex flex-col gap-2 pt-2 sm:flex-row">
-                  <Button disabled className="w-full sm:w-auto">
-                    <Play className="mr-2 h-4 w-4" />
-                    Execute
-                  </Button>
-                </div>
-                <NotIntegratedCallout
-                  feature="Custom Workflow"
-                  description="Custom workflow execution requires client-side API integration which will be implemented in a future release."
-                />
-              </CardContent>
-            </Card>
-          );
-        }
-        return null;
-
+        return <Image className="h-5 w-5" />;
       default:
-        return null;
+        return <Wrench className="h-5 w-5" />;
     }
   };
 
-  return renderToolCard();
+  const getCardTitle = () => {
+    switch (workflowType) {
+      case 'video-generation':
+        return 'Video Generation';
+      case 'image-generation':
+        return 'Image Generation';
+      case 'integration':
+        return 'Integration Tools';
+      case 'app-builder':
+        return 'App Builder';
+      case 'custom':
+        return 'Custom Workflow';
+      default:
+        return 'Workflow Tools';
+    }
+  };
+
+  const getCardDescription = () => {
+    switch (workflowType) {
+      case 'video-generation':
+        return `Create videos with ${providerName}`;
+      case 'image-generation':
+        return `Create images with ${providerName}`;
+      case 'integration':
+        return `Execute ${providerName} integration workflows`;
+      case 'app-builder':
+        return `Build applications with ${providerName}`;
+      case 'custom':
+        return `Execute custom workflows with ${providerName}`;
+      default:
+        return `Execute workflows with ${providerName}`;
+    }
+  };
+
+  const isExecuting = executeWorkflow.isPending || 
+    (currentRun && (currentRun.status.__kind__ === 'pending' || currentRun.status.__kind__ === 'running'));
+
+  const canExecute = isReady && !isExecuting;
+
+  return (
+    <div className="space-y-6">
+      <Card>
+        <CardHeader>
+          <CardTitle className="flex items-center gap-2">
+            {getCardIcon()}
+            {getCardTitle()}
+          </CardTitle>
+          <CardDescription>{getCardDescription()}</CardDescription>
+        </CardHeader>
+        <CardContent className="space-y-4">
+          {/* Connection status */}
+          {isConnecting && (
+            <Alert>
+              <Loader2 className="h-4 w-4 animate-spin" />
+              <AlertDescription>Connecting to backend...</AlertDescription>
+            </Alert>
+          )}
+
+          {!isReady && !isConnecting && (
+            <Alert variant="destructive">
+              <AlertCircle className="h-4 w-4" />
+              <AlertDescription>
+                Backend is not available. Please check your connection and try again.
+              </AlertDescription>
+            </Alert>
+          )}
+
+          {/* Option fields */}
+          {optionFields.map((field) => renderField(field))}
+
+          {/* Execute button */}
+          <Button
+            onClick={handleExecute}
+            disabled={!canExecute}
+            className="w-full"
+          >
+            {isExecuting ? (
+              <>
+                <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+                Generating...
+              </>
+            ) : (
+              <>
+                {getCardIcon()}
+                <span className="ml-2">
+                  {workflowType === 'image-generation' && 'Generate Image'}
+                  {workflowType === 'video-generation' && 'Generate Video'}
+                  {workflowType === 'integration' && 'Execute Integration'}
+                  {workflowType === 'app-builder' && 'Build App'}
+                  {workflowType === 'custom' && 'Execute Workflow'}
+                  {workflowType === 'chat' && 'Start Chat'}
+                </span>
+              </>
+            )}
+          </Button>
+        </CardContent>
+      </Card>
+
+      {/* Current run result */}
+      {currentRun && (
+        <div className="space-y-4">
+          {(workflowType === 'image-generation' || workflowType === 'video-generation') ? (
+            <GenerationResult run={currentRun} onReuse={() => handleReuseRun(currentRun)} />
+          ) : (
+            <ExecutionResultPanel run={currentRun} onReuse={() => handleReuseRun(currentRun)} />
+          )}
+        </div>
+      )}
+
+      {/* History for image/video workflows */}
+      {(workflowType === 'image-generation' || workflowType === 'video-generation') && (
+        <GenerationHistory
+          runs={runs}
+          onReuseRun={handleReuseRun}
+          isLoading={runsLoading}
+        />
+      )}
+    </div>
+  );
 }

@@ -1,103 +1,165 @@
 {
   "kind": "implementation_plan",
   "version": "1.0",
-  "title": "Provider flow resilience: friendly stopped-canister messaging and strict backend-readiness gating",
+  "title": "Provider workflow execution UI (Fal.ai image generation + reusable execution/result/history across providers)",
   "requirements": [
     {
-      "id": "REQ-29",
-      "summary": "Centralize classification of stopped-canister (IC0508 / Reject code 5) and other backend-call failures so user-facing messages are concise English guidance and never show raw replica rejection payloads.",
+      "id": "REQ-33",
+      "summary": "Replace placeholder workflow tool cards with real execution flows that run after a provider key is configured and show results with download/share.",
       "acceptanceCriteria": [
-        "When an API key save/update fails and the thrown error text includes 'IC0508', 'Reject code: 5', or 'canister' + 'stopped', the UI displays an English message indicating the backend canister appears stopped/unavailable and prompts the user to retry or reload.",
-        "The raw reject payload from the agent/replica is not shown directly to the end user in toast text or in-page alerts.",
-        "The improved message appears consistently anywhere backend call failures are surfaced for provider actions (at minimum: ProviderKeyManager save flow)."
+        "On Fal.ai and any other provider page that shows a workflow tool card, the primary action button is enabled when the backend is connected and the provider credential exists.",
+        "The “Not Integrated Yet” callout is not shown for Fal.ai image generation; instead the UI performs a real generation run and displays a result.",
+        "User-facing text in these flows is in English."
       ],
       "file_operations": [
         {
-          "path": "frontend/src/utils/backendErrorMessages.ts",
+          "path": "frontend/src/components/providers/ProviderToolsOptionsSection.tsx",
+          "operation": "modify",
+          "description": "Replace disabled workflow action buttons + NotIntegratedCallout with real execute → show result → download/share flows for all workflowType cards, using backendInterface.executeWorkflow and reusable result UI. Ensure inputs passed are derived from optionFields (non-secret) and user-facing text is English."
+        },
+        {
+          "path": "frontend/src/pages/providers/GenericProviderPage.tsx",
+          "operation": "modify",
+          "description": "Pass providerId into ProviderToolsOptionsSection so execution/history can be provider-scoped and gated by existing ProviderActionGuard."
+        }
+      ]
+    },
+    {
+      "id": "REQ-37",
+      "summary": "Implement Fal.ai image generation end-to-end (prompt + multi-model + generate + preview + download + share) matching the screenshot workflow.",
+      "acceptanceCriteria": [
+        "Fal.ai page (via GenericProviderPage providerId=\"fal-ai\" or equivalent) provides a working Image Generation card with model selection, prompt input, and an enabled “Generate Image” action when the Fal.ai key exists and backend is ready.",
+        "After a successful generation, the UI shows the generated image preview and enables Download and Share actions.",
+        "Multi-model is supported for Fal.ai (user can select among at least two models; the UI makes it clear which model is selected for a run).",
+        "If generation fails, the UI shows an English error message, keeps the user in a recoverable state (no stuck spinners), and allows retry."
+      ],
+      "file_operations": [
+        {
+          "path": "frontend/src/providers/providers.ts",
+          "operation": "modify",
+          "description": "Update the 'fal-ai' provider optionFields to support multi-model selection (at least two models) using a select field and a prompt textarea field. Ensure labels/placeholders align with the intended Image Generation card UX."
+        },
+        {
+          "path": "frontend/src/components/providers/ProviderToolsOptionsSection.tsx",
+          "operation": "modify",
+          "description": "Ensure the image-generation card renders a clear Model selector + Prompt input for Fal.ai based on optionFields, executes a real run via the workflow execution hook, and renders preview + Download/Share on success with recoverable error handling."
+        }
+      ]
+    },
+    {
+      "id": "REQ-38",
+      "summary": "Make ProviderToolsOptionsSection workflowType actions functional and wired to backend workflow execution using optionFields (excluding secrets), with download/share for artifact-producing workflows.",
+      "acceptanceCriteria": [
+        "For each workflowType card, the primary action is enabled when ProviderActionGuard passes (backend ready + key exists).",
+        "For image-generation and video-generation cards, after execution completes, the UI provides Download and Share actions when an artifact is available.",
+        "The NotIntegratedCallout is removed for workflow cards that are now wired to execution APIs (at minimum: Fal.ai image-generation)."
+      ],
+      "file_operations": [
+        {
+          "path": "frontend/src/components/providers/ProviderToolsOptionsSection.tsx",
+          "operation": "modify",
+          "description": "Add providerId prop; implement per-workflowType execution handlers that serialize optionFields-derived inputs (non-secret) and call a shared workflow execution hook. Remove NotIntegratedCallout for wired workflows, starting with Fal.ai image-generation."
+        },
+        {
+          "path": "frontend/src/hooks/workflows/useWorkflowExecution.ts",
           "operation": "create",
-          "description": "Add a small utility to classify backend-call failures (including IC0508/Reject code 5/canister stopped) and return safe, user-friendly English messages plus recommended next steps; ensure it strips/avoids showing raw replica/agent rejection payloads."
-        },
-        {
-          "path": "frontend/src/components/keys/ProviderKeyManager.tsx",
-          "operation": "modify",
-          "description": "Use the shared backend error classification utility to convert save-mutation failures into safe English toast/inline messages; avoid displaying raw error.message directly and keep details only in console logs."
-        },
-        {
-          "path": "frontend/src/components/chat/ChatbotCommandCenter.tsx",
-          "operation": "modify",
-          "description": "Use the shared backend error classification utility when surfacing send failures (toast) so raw backend/replica payloads are never shown to users."
+          "description": "Create a reusable react-query mutation hook that calls backendInterface.executeWorkflow(provider, workflowType, inputs) and returns a WorkflowRun; handle English error messaging and ensure it does not run when actor is null or backend is not ready. Verify the component's usage instructions before implementing."
         }
       ]
     },
     {
-      "id": "REQ-30",
-      "summary": "Harden ProviderKeyManager save flow with dedicated stopped-canister handling, actionable guidance, and recoverable UI state (no stuck spinners; input remains editable for retry).",
+      "id": "REQ-39",
+      "summary": "Add a reusable Generation Result UI pattern for image/video workflows (status, progress messaging when available, preview, download/share).",
       "acceptanceCriteria": [
-        "If saving a provider credential fails due to a stopped canister (IC0508 / Reject code: 5), ProviderKeyManager shows a clear English error (toast and/or inline alert) and keeps the entered value editable so the user can retry.",
-        "If saving fails for other reasons (e.g., unauthorized, network), ProviderKeyManager surfaces a concise English error message (not the raw payload).",
-        "ProviderKeyManager does not call the save mutation when the backend actor is not ready (this guard already exists; keep it working)."
+        "During execution, the UI clearly indicates that generation is in progress and prevents duplicate submissions unless explicitly allowed.",
+        "On success, image workflows show an image preview; video workflows show a playable video preview (or a clearly labeled downloadable file if preview is not possible).",
+        "Download triggers a browser download with an appropriate file name and extension.",
+        "Share uses the Web Share API when available; otherwise it falls back to copying a link or offering a download-first instruction, with English messaging."
       ],
       "file_operations": [
         {
-          "path": "frontend/src/components/keys/ProviderKeyManager.tsx",
-          "operation": "modify",
-          "description": "Add an explicit stopped-canister error path (IC0508/Reject code 5) using the shared error utility; ensure save errors do not clear input or force a non-editable state, and ensure pending/loading UI always returns to idle after error."
+          "path": "frontend/src/components/workflows/GenerationResult.tsx",
+          "operation": "create",
+          "description": "Implement a reusable UI component that renders WorkflowRun status (pending/running/success/failed), an in-progress state, an artifact preview (image/video when possible), and Download/Share actions when outputBlobId is present."
         },
         {
-          "path": "frontend/src/hooks/keys/useProviderKey.ts",
-          "operation": "modify",
-          "description": "Ensure the save mutation surfaces sanitized, user-friendly errors (wrap/translate thrown errors using the shared backend error utility) so callers never end up displaying raw replica rejection payloads."
+          "path": "frontend/src/utils/artifacts.ts",
+          "operation": "create",
+          "description": "Add frontend helpers to (1) derive a direct artifact URL suitable for preview/share when possible and (2) download artifacts with a reasonable filename/extension using blob storage capabilities. Use the blob-storage ExternalBlob API for bytes/URL handling. Verify the component's usage instructions before implementing."
+        },
+        {
+          "path": "frontend/src/utils/share.ts",
+          "operation": "create",
+          "description": "Add a small utility to share an artifact using the Web Share API when available; otherwise fall back to copying a link to clipboard with English user-facing messaging."
         }
       ]
     },
     {
-      "id": "REQ-31",
-      "summary": "Extend BackendConnectionAlert to recognize 'canister stopped' errors (IC0508 / Reject code 5) and show tailored English guidance, supporting both authenticated and unauthenticated users.",
+      "id": "REQ-40",
+      "summary": "Apply the capability-driven execution approach across all providers in the registry so workflow actions actually run when keys are configured.",
       "acceptanceCriteria": [
-        "When BackendConnectionAlert receives an error whose message includes IC0508 / Reject code: 5 / 'canister … is stopped', it renders an English message indicating the backend is currently unavailable/stopped and suggests 'Retry Connection' and 'Reload Page' as next steps (and login when unauthenticated).",
-        "BackendConnectionAlert continues to show the existing guidance for network/timeout/unauthorized errors."
+        "Providers with workflowType 'image-generation' use the backend execution API and can produce downloadable artifacts (at minimum Fal.ai; others follow the same mechanism).",
+        "Providers with workflowType 'video-generation' use the backend execution API and can produce downloadable artifacts (or a clear, English failure message if the provider call fails).",
+        "Providers with workflowType 'integration' and 'app-builder' use the backend execution API and display structured results (success/failure output) in the UI.",
+        "No provider workflow requires exposing saved provider secrets in the UI beyond entry/edit views."
       ],
       "file_operations": [
         {
-          "path": "frontend/src/components/common/BackendConnectionAlert.tsx",
+          "path": "frontend/src/components/providers/ProviderToolsOptionsSection.tsx",
           "operation": "modify",
-          "description": "Add detection for IC0508/Reject code 5/canister stopped (preferably via the shared backend error utility) and render tailored English explanation + next steps while preserving existing network/timeout/unauthorized guidance and unauthenticated login CTA."
+          "description": "Generalize workflow execution for workflowType values (image-generation, video-generation, integration, app-builder, custom) by mapping each card’s primary action to backend execution with inputs from optionFields and rendering a consistent result area."
         },
         {
-          "path": "frontend/src/utils/backendErrorMessages.ts",
-          "operation": "modify",
-          "description": "Expose a helper specifically usable by BackendConnectionAlert for mapping connection-related errors (including stopped canister) into concise English messages and action suggestions."
+          "path": "frontend/src/components/workflows/ExecutionResultPanel.tsx",
+          "operation": "create",
+          "description": "Create a generic result renderer for non-artifact workflows (integration/app-builder/custom) that shows success/failure state, sanitized error messages, run id/timestamp, and a human-readable summary of the inputs used (non-secret)."
         }
       ]
     },
     {
-      "id": "REQ-32",
-      "summary": "Gate all actor-dependent provider flows on useBackendActor readiness so provider key and provider chat actions never call the backend while connecting; show 'Still connecting…' guidance instead of raw errors.",
+      "id": "REQ-41",
+      "summary": "Gate workflow execution UI and hooks on backend readiness and provider key existence, with clear English messaging for connecting/unavailable states.",
       "acceptanceCriteria": [
-        "Provider key save/update is blocked while useBackendActor reports !isReady, with an English message explaining the backend is still connecting.",
-        "Provider chat send is blocked while useBackendActor reports !isReady, with an English message explaining the backend is still connecting (no raw error payload).",
-        "No provider page action triggers a backend call if the backend actor is null/unready; the UI must render a loading/connecting or connection-error state instead."
+        "If the backend is connecting, workflow actions are disabled and show “Connecting to backend…” (or equivalent) rather than failing.",
+        "If the backend is stopped/unavailable (e.g., IC0508 / Reject code: 5), the UI shows an English explanation and a retry path, consistent with existing BackendConnectionAlert behavior.",
+        "Workflow execution mutations do not run when actor is null or isReady is false."
       ],
       "file_operations": [
         {
-          "path": "frontend/src/hooks/chat/useProviderChat.ts",
+          "path": "frontend/src/hooks/workflows/useWorkflowExecution.ts",
           "operation": "modify",
-          "description": "Reinforce readiness gating for chat send and message loading by ensuring the hook never attempts backend calls unless actor is present and isReady is true; sanitize any thrown errors using the shared backend error utility."
+          "description": "Ensure the execution mutation checks useBackendActor().actor + isReady before running, returns a clear English error if not ready, and classifies backend errors using existing backendErrorMessages utilities."
         },
         {
-          "path": "frontend/src/components/chat/ChatbotCommandCenter.tsx",
+          "path": "frontend/src/components/providers/ProviderToolsOptionsSection.tsx",
           "operation": "modify",
-          "description": "Disable send UI while backend is not ready and show a clear English 'Still connecting to the backend…' message (inline and/or toast) driven by useBackendActor readiness via the chat hook; avoid raw payloads."
+          "description": "Disable primary action buttons and show inline English state text when backend is connecting/unavailable, aligning with ProviderActionGuard and BackendConnectionAlert behaviors."
+        }
+      ]
+    },
+    {
+      "id": "REQ-42",
+      "summary": "Add Generation History on image/video provider pages to list recent runs, allow re-download/share, and reuse past run parameters.",
+      "acceptanceCriteria": [
+        "History list shows at least: timestamp, status, model/summary, and actions (view/download/share when available).",
+        "Selecting a past run can repopulate the workflow inputs (prompt/model/option fields) without exposing secrets.",
+        "History persists across page reloads for authenticated users."
+      ],
+      "file_operations": [
+        {
+          "path": "frontend/src/hooks/workflows/useWorkflowRuns.ts",
+          "operation": "create",
+          "description": "Create a react-query hook to fetch per-provider run history via backendInterface.getWorkflowRuns(provider) and optionally poll/refresh while recent runs are pending/running. Verify the component's usage instructions before implementing."
         },
         {
-          "path": "frontend/src/components/keys/ProviderKeyManager.tsx",
-          "operation": "modify",
-          "description": "Keep/strengthen the existing isReady guard so the save mutation is never invoked while connecting/unready, and ensure the user sees a clear English connecting message rather than raw errors."
+          "path": "frontend/src/components/workflows/GenerationHistory.tsx",
+          "operation": "create",
+          "description": "Implement a history UI for image/video workflows that lists recent runs (timestamp/status/summary), allows selecting a run to repopulate inputs, and exposes view/download/share actions when outputBlobId is available."
         },
         {
-          "path": "frontend/src/components/providers/ProviderActionGuard.tsx",
+          "path": "frontend/src/components/providers/ProviderToolsOptionsSection.tsx",
           "operation": "modify",
-          "description": "Ensure the guard consistently renders a connecting state while useBackendActor isConnecting or !isReady (rather than allowing children to render and trigger actions), and rely on BackendConnectionAlert for connection errors."
+          "description": "Render GenerationHistory under image-generation and video-generation tool cards, wire it to useWorkflowRuns(providerId), and implement 'Reuse parameters' by parsing a run’s stored non-secret inputs into the form state."
         }
       ]
     }

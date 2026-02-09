@@ -35,6 +35,20 @@ export interface UserProfile { 'name' : string }
 export type UserRole = { 'admin' : null } |
   { 'user' : null } |
   { 'guest' : null };
+export interface WorkflowRun {
+  'id' : string,
+  'status' : WorkflowRunStatus,
+  'provider' : string,
+  'inputs' : string,
+  'timestamp' : Time,
+  'outputBlobId' : [] | [string],
+  'workflowType' : string,
+  'durationNanos' : [] | [bigint],
+}
+export type WorkflowRunStatus = { 'pending' : null } |
+  { 'success' : null } |
+  { 'failed' : string } |
+  { 'running' : null };
 export interface _CaffeineStorageCreateCertificateResult {
   'method' : string,
   'blob_hash' : string,
@@ -67,6 +81,7 @@ export interface _SERVICE {
   'addOrUpdateAPIKey' : ActorMethod<[string, string], undefined>,
   'assignCallerUserRole' : ActorMethod<[Principal, UserRole], undefined>,
   'customProviderMetadataExists' : ActorMethod<[string], boolean>,
+  'executeWorkflow' : ActorMethod<[string, string, string], WorkflowRun>,
   'getAllAPIKeys' : ActorMethod<[], Array<[Principal, Array<APIKey>]>>,
   'getAllCustomProviderMetadata' : ActorMethod<
     [],
@@ -87,11 +102,16 @@ export interface _SERVICE {
   'getProviderInfo' : ActorMethod<[string], ProviderInfo>,
   'getProviderKey' : ActorMethod<[string], [] | [APIKey]>,
   'getUserProfile' : ActorMethod<[Principal], [] | [UserProfile]>,
+  'getWorkflowRuns' : ActorMethod<[string], Array<WorkflowRun>>,
   'initializeProviders' : ActorMethod<[Array<ProviderInfo>], undefined>,
   'isCallerAdmin' : ActorMethod<[], boolean>,
   'providerKeyExists' : ActorMethod<[string], boolean>,
   'setCustomProviderMetadata' : ActorMethod<[string, string], undefined>,
   'streamChatMessages' : ActorMethod<[string, bigint], Array<ChatMessage>>,
+  'updateWorkflowRun' : ActorMethod<
+    [string, WorkflowRunStatus, [] | [string], [] | [bigint]],
+    WorkflowRun
+  >,
 }
 export declare const idlService: IDL.ServiceClass;
 export declare const idlInitArgs: IDL.Type[];

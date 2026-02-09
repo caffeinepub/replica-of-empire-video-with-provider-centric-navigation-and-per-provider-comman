@@ -176,6 +176,7 @@ export default function CustomSlotProviderPage() {
 
           {provider.workflowType && provider.workflowType !== 'chat' && (
             <ProviderToolsOptionsSection
+              providerId={provider.id}
               providerName={currentDisplayName}
               workflowType={provider.workflowType}
               optionFields={provider.optionFields}

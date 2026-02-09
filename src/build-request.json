@@ -1,93 +1,208 @@
 {
   "kind": "build_request",
-  "title": "Fix Fal.ai key save failure by improving backend readiness gating and stopped-canister error messaging",
+  "title": "Implement real provider workflow execution after key upload (Fal.ai multi-model image generation + capability-driven execution across all providers)",
   "priority": "high",
   "requirements": [
     {
-      "id": "REQ-29",
-      "text": "Improve user-facing error handling for backend call failures that return 'Reject code: 5' / 'IC0508' / 'Canister … is stopped' so the UI shows a clear English explanation and next steps instead of the raw replica rejection payload.",
+      "id": "REQ-33",
+      "text": "Replace the current placeholder workflow UI (disabled buttons + “Not Integrated Yet” callouts) with working execution flows that run once a provider credential is configured, starting with Fal.ai image generation and then applying the same “execute → show result → download → share” pattern across all providers according to each provider’s declared workflowType/capabilities.",
       "target": "frontend",
       "source": {
         "messageIds": [
-          "msg-4"
+          "msg-1"
         ],
         "quotes": [
-          "This is what it is saying now"
+          "Yes please. Make all features work as they should. Once the keys have been uploaded.",
+          "All 3. And also do it on all applications.",
+          "Build it"
         ]
       },
       "acceptanceCriteria": [
-        "When an API key save/update fails and the thrown error text includes 'IC0508', 'Reject code: 5', or 'canister' + 'stopped', the UI displays an English message indicating the backend canister appears stopped/unavailable and prompts the user to retry or reload.",
-        "The raw reject payload from the agent/replica is not shown directly to the end user in toast text or in-page alerts.",
-        "The improved message appears consistently anywhere backend call failures are surfaced for provider actions (at minimum: ProviderKeyManager save flow)."
+        "On Fal.ai and any other provider page that shows a workflow tool card, the primary action button is enabled when the backend is connected and the provider credential exists.",
+        "The “Not Integrated Yet” callout is not shown for Fal.ai image generation; instead the UI performs a real generation run and displays a result.",
+        "User-facing text in these flows is in English."
       ]
     },
     {
-      "id": "REQ-30",
-      "text": "Update ProviderKeyManager to classify and display backend errors from the save mutation in a user-friendly way, including a dedicated handling path for IC0508/Reject code 5 errors, and to keep the user in a recoverable state (no stuck spinners, actionable retry guidance).",
-      "target": "frontend",
+      "id": "REQ-34",
+      "text": "Implement backend workflow execution APIs (single-actor Motoko) that allow the frontend to request provider workflow runs (image/video/integration/app-builder), while keeping provider credentials stored only in the backend and never returning stored secret values to the UI.",
+      "target": "backend",
       "source": {
         "messageIds": [
-          "msg-6"
+          "msg-1"
         ],
         "quotes": [
-          "Yes please"
+          "Make all features work as they should. Once the keys have been uploaded."
         ]
       },
       "acceptanceCriteria": [
-        "If saving a provider credential fails due to a stopped canister (IC0508 / Reject code: 5), ProviderKeyManager shows a clear English error (toast and/or inline alert) and keeps the entered value editable so the user can retry.",
-        "If saving fails for other reasons (e.g., unauthorized, network), ProviderKeyManager surfaces a concise English error message (not the raw payload).",
-        "ProviderKeyManager does not call the save mutation when the backend actor is not ready (this guard already exists; keep it working)."
+        "Backend exposes new methods to: (1) create a workflow run request for a provider, (2) query run status, and (3) fetch resulting artifacts/outputs without exposing stored provider keys.",
+        "Backend uses the existing per-user provider key storage (addOrUpdateAPIKey/getProviderKey) for authorization and secret retrieval; no API key is returned from any new method.",
+        "All new backend methods enforce the same authorization pattern as existing key/chat methods (must be #user for per-user execution)."
       ]
     },
     {
-      "id": "REQ-31",
-      "text": "Extend BackendConnectionAlert to recognize and explain the 'canister stopped' class of errors (IC0508 / Reject code: 5) with tailored English guidance, and ensure it remains usable for both authenticated and unauthenticated states.",
-      "target": "frontend",
+      "id": "REQ-35",
+      "text": "Add backend state for per-user workflow run history (per provider) including request parameters (non-secret), timestamps, status, error (sanitized), and references to any stored output artifacts (e.g., image/video blobs) so users can download/share after generation completes.",
+      "target": "backend",
       "source": {
         "messageIds": [
-          "msg-4",
-          "msg-6"
+          "msg-1"
         ],
         "quotes": [
-          "This is what it is saying now",
-          "Yes please"
+          "Make all features work as they should. Once the keys have been uploaded."
         ]
       },
       "acceptanceCriteria": [
-        "When BackendConnectionAlert receives an error whose message includes IC0508 / Reject code: 5 / 'canister … is stopped', it renders an English message indicating the backend is currently unavailable/stopped and suggests 'Retry Connection' and 'Reload Page' as next steps (and login when unauthenticated).",
-        "BackendConnectionAlert continues to show the existing guidance for network/timeout/unauthorized errors."
+        "Workflow runs are persisted per authenticated user and per provider and can be listed by the frontend.",
+        "Each run record contains enough data to render a history item (created time, provider, status, and a human-readable non-sensitive summary of inputs).",
+        "If a run produces an artifact, the run record references it so the UI can fetch it later (even after reload)."
       ]
     },
     {
-      "id": "REQ-32",
-      "text": "Ensure all actor-dependent provider flows are gated on the existing useBackendActor readiness signals (isReady / isConnecting) so the UI never attempts provider-key mutations or provider-chat mutations while still connecting, and surfaces the 'Still connecting to the backend…' message instead.",
-      "target": "frontend",
+      "id": "REQ-36",
+      "text": "Use canister-side storage for generated artifacts (images/videos) so download/share works without requiring the frontend to store provider keys or call third-party providers directly from the browser.",
+      "target": "backend",
       "source": {
         "messageIds": [
-          "msg-6"
+          "msg-1"
         ],
         "quotes": [
-          "Yes please"
+          "After I uploaded a key and tried to generate a image."
         ]
       },
       "acceptanceCriteria": [
-        "Provider key save/update is blocked while useBackendActor reports !isReady, with an English message explaining the backend is still connecting.",
-        "Provider chat send is blocked while useBackendActor reports !isReady, with an English message explaining the backend is still connecting (no raw error payload).",
-        "No provider page action triggers a backend call if the backend actor is null/unready; the UI must render a loading/connecting or connection-error state instead."
+        "Generated images are stored as blobs in canister storage (leveraging the existing blob-storage mixin already included in backend/main.mo).",
+        "Backend provides an API to retrieve an artifact by id (or equivalent) for download.",
+        "No generated artifact requires the UI to re-provide the provider key to download/share."
+      ]
+    },
+    {
+      "id": "REQ-37",
+      "text": "Implement Fal.ai image generation end-to-end: support prompt input, multi-model selection, generate, show preview, download, and share, matching the workflow shown in the uploaded screenshot.",
+      "target": "both",
+      "source": {
+        "messageIds": [
+          "msg-1"
+        ],
+        "quotes": [
+          "Thanks for the screenshot — I can see exactly what’s happening now.",
+          "Want me to add full Fal.ai image generation now?",
+          "All 3."
+        ]
+      },
+      "acceptanceCriteria": [
+        "Fal.ai page (via GenericProviderPage providerId=\"fal-ai\" or equivalent) provides a working Image Generation card with model selection, prompt input, and an enabled “Generate Image” action when the Fal.ai key exists and backend is ready.",
+        "After a successful generation, the UI shows the generated image preview and enables Download and Share actions.",
+        "Multi-model is supported for Fal.ai (user can select among at least two models; the UI makes it clear which model is selected for a run).",
+        "If generation fails, the UI shows an English error message, keeps the user in a recoverable state (no stuck spinners), and allows retry."
+      ]
+    },
+    {
+      "id": "REQ-38",
+      "text": "Upgrade ProviderToolsOptionsSection so that for workflowType values (image-generation, video-generation, integration, app-builder, custom) the primary action buttons are functional (not disabled) when requirements are met, and they call the backend workflow execution APIs using the optionFields as inputs (excluding secrets).",
+      "target": "frontend",
+      "source": {
+        "messageIds": [
+          "msg-1"
+        ],
+        "quotes": [
+          "Make all features work as they should. Once the keys have been uploaded.",
+          "And also do it on all applications."
+        ]
+      },
+      "acceptanceCriteria": [
+        "For each workflowType card, the primary action is enabled when ProviderActionGuard passes (backend ready + key exists).",
+        "For image-generation and video-generation cards, after execution completes, the UI provides Download and Share actions when an artifact is available.",
+        "The NotIntegratedCallout is removed for workflow cards that are now wired to execution APIs (at minimum: Fal.ai image-generation)."
+      ]
+    },
+    {
+      "id": "REQ-39",
+      "text": "Implement a reusable “Generation Result” UI pattern used by image/video workflows: shows run status (queued/running/succeeded/failed), progress messaging when available, the artifact preview (image/video), and action buttons for download/share.",
+      "target": "frontend",
+      "source": {
+        "messageIds": [
+          "msg-1"
+        ],
+        "quotes": [
+          "After I uploaded a key and tried to generate a image."
+        ]
+      },
+      "acceptanceCriteria": [
+        "During execution, the UI clearly indicates that generation is in progress and prevents duplicate submissions unless explicitly allowed.",
+        "On success, image workflows show an image preview; video workflows show a playable video preview (or a clearly labeled downloadable file if preview is not possible).",
+        "Download triggers a browser download with an appropriate file name and extension.",
+        "Share uses the Web Share API when available; otherwise it falls back to copying a link or offering a download-first instruction, with English messaging."
+      ]
+    },
+    {
+      "id": "REQ-40",
+      "text": "Apply the same execution approach across all providers declared in the frontend provider registry (frontend/src/providers/providers.ts): for each provider, render and execute the workflow corresponding to its workflowType using backend execution APIs, so that “Generate/Execute/Build App” actions actually run when keys are configured.",
+      "target": "both",
+      "source": {
+        "messageIds": [
+          "msg-1"
+        ],
+        "quotes": [
+          "And also do it on all applications."
+        ]
+      },
+      "acceptanceCriteria": [
+        "Providers with workflowType 'image-generation' use the backend execution API and can produce downloadable artifacts (at minimum Fal.ai; others follow the same mechanism).",
+        "Providers with workflowType 'video-generation' use the backend execution API and can produce downloadable artifacts (or a clear, English failure message if the provider call fails).",
+        "Providers with workflowType 'integration' and 'app-builder' use the backend execution API and display structured results (success/failure output) in the UI.",
+        "No provider workflow requires exposing saved provider secrets in the UI beyond entry/edit views."
+      ]
+    },
+    {
+      "id": "REQ-41",
+      "text": "Ensure all new workflow execution UI and hooks are gated on the existing backend readiness signals (useBackendActor: isReady/isConnecting) and provider key existence (useProviderKey), and provide clear English messaging when the backend is still connecting or unavailable.",
+      "target": "frontend",
+      "source": {
+        "messageIds": [
+          "msg-1"
+        ],
+        "quotes": [
+          "Make all features work as they should. Once the keys have been uploaded."
+        ]
+      },
+      "acceptanceCriteria": [
+        "If the backend is connecting, workflow actions are disabled and show “Connecting to backend…” (or equivalent) rather than failing.",
+        "If the backend is stopped/unavailable (e.g., IC0508 / Reject code: 5), the UI shows an English explanation and a retry path, consistent with existing BackendConnectionAlert behavior.",
+        "Workflow execution mutations do not run when actor is null or isReady is false."
+      ]
+    },
+    {
+      "id": "REQ-42",
+      "text": "Add a “Generation History” section on relevant provider pages (image/video workflows) that lists recent runs for that provider for the current user and allows re-downloading artifacts and reusing a run’s parameters (e.g., reinsert prompt/model into inputs).",
+      "target": "both",
+      "source": {
+        "messageIds": [
+          "msg-1"
+        ],
+        "quotes": [
+          "Make all features work as they should. Once the keys have been uploaded."
+        ]
+      },
+      "acceptanceCriteria": [
+        "History list shows at least: timestamp, status, model/summary, and actions (view/download/share when available).",
+        "Selecting a past run can repopulate the workflow inputs (prompt/model/option fields) without exposing secrets.",
+        "History persists across page reloads for authenticated users."
       ]
     }
   ],
   "constraints": [
-    "Do not edit any files under frontend/src/components/ui (read-only shadcn components).",
-    "Do not edit immutable paths: frontend/src/hooks/useInternetIdentity.ts, frontend/src/hooks/useInternetIdentity.tsx, frontend/src/hooks/useActor.ts, frontend/src/main.tsx.",
-    "Backend must remain a single Motoko actor in backend/main.mo; only add backend/migration.mo if a state schema change is required.",
-    "Use English for all user-facing UI text."
+    "Backend must remain single-actor; all Motoko logic lives in backend/main.mo.",
+    "Generate backend/migration.mo only if an upgrade of existing stable state is required to add new persisted workflow-run/artifact state.",
+    "Do not edit frontend files under frontend/immutablePaths (must compose existing UI components instead).",
+    "Use English for all user-facing text.",
+    "Do not expose stored provider credentials in the UI beyond entry/edit views; do not add any API that returns secret key values to the frontend."
   ],
   "nonGoals": [
-    "Do not implement actual Fal.ai API execution/inference; this change is limited to reliability and error handling around backend connectivity and credential saving.",
-    "Do not add third-party authentication providers (only Internet Identity).",
-    "Do not add external databases or services.",
-    "Do not add new provider types or change the provider registry IDs."
+    "Implementing third-party authentication methods beyond Internet Identity.",
+    "Adding external databases or non-IC backend services.",
+    "Real-time streaming updates via WebSockets (polling/query refresh is acceptable)."
   ],
   "imageRequirements": {
     "required": [],
