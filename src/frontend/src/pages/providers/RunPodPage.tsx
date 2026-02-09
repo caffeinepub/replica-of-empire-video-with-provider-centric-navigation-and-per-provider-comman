@@ -1,10 +1,9 @@
 import { useState } from 'react';
 import { getProviderById } from '@/providers/providers';
 import ProviderKeyManager from '@/components/keys/ProviderKeyManager';
-import ChatbotCommandCenter from '@/components/chat/ChatbotCommandCenter';
 import ProviderActionGuard from '@/components/providers/ProviderActionGuard';
 import RecommendedPrompts from '@/components/providers/RecommendedPrompts';
-import ProviderToolsOptionsSection from '@/components/providers/ProviderToolsOptionsSection';
+import { ProviderToolsOptionsSection } from '@/components/providers/ProviderToolsOptionsSection';
 
 export default function RunPodPage() {
   const provider = getProviderById('runpod')!;
@@ -27,33 +26,20 @@ export default function RunPodPage() {
         </div>
       </div>
 
-      <ProviderKeyManager providerId={provider.id} providerName={provider.name} />
+      <ProviderKeyManager providerId={provider.id} providerName={provider.displayName} />
 
       <ProviderActionGuard providerId={provider.id} providerName={provider.displayName}>
-        <div className="space-y-6">
-          {provider.recommendedPrompts && provider.recommendedPrompts.length > 0 && (
-            <RecommendedPrompts
-              prompts={provider.recommendedPrompts}
-              onSelectPrompt={handleSelectPrompt}
-            />
-          )}
-
-          <ChatbotCommandCenter 
-            providerId={provider.id} 
-            providerName={provider.displayName}
-            draftMessage={draftMessage}
-            onDraftChange={setDraftMessage}
+        {provider.recommendedPrompts && provider.recommendedPrompts.length > 0 && (
+          <RecommendedPrompts
+            prompts={provider.recommendedPrompts}
+            onSelectPrompt={handleSelectPrompt}
           />
-
-          {provider.workflowType && provider.workflowType !== 'chat' && (
-            <ProviderToolsOptionsSection
-              providerId={provider.id}
-              providerName={provider.displayName}
-              workflowType={provider.workflowType}
-              optionFields={provider.optionFields}
-            />
-          )}
-        </div>
+        )}
+        <ProviderToolsOptionsSection
+          provider={provider.id}
+          workflowType={provider.workflowType}
+          optionFields={provider.optionFields}
+        />
       </ProviderActionGuard>
     </div>
   );

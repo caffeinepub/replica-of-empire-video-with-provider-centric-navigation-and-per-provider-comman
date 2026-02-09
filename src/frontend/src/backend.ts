@@ -165,6 +165,8 @@ export interface backendInterface {
     addChatMessage(provider: string, content: string): Promise<void>;
     addOrUpdateAPIKey(provider: string, key: string): Promise<void>;
     assignCallerUserRole(user: Principal, role: UserRole): Promise<void>;
+    cancelPendingWorkflowRunsForProvider(provider: string): Promise<void>;
+    cancelWorkflowRun(runId: string): Promise<void>;
     customProviderMetadataExists(providerKey: string): Promise<boolean>;
     executeWorkflow(provider: string, workflowType: string, inputs: string): Promise<WorkflowRun>;
     getAllAPIKeys(): Promise<Array<[Principal, Array<APIKey>]>>;
@@ -182,6 +184,7 @@ export interface backendInterface {
     initializeProviders(providerList: Array<ProviderInfo>): Promise<void>;
     isCallerAdmin(): Promise<boolean>;
     providerKeyExists(provider: string): Promise<boolean>;
+    saveCallerUserProfile(profile: UserProfile): Promise<void>;
     setCustomProviderMetadata(providerKey: string, displayName: string): Promise<void>;
     streamChatMessages(provider: string, limit: bigint): Promise<Array<ChatMessage>>;
     updateWorkflowRun(runId: string, status: WorkflowRunStatus, outputBlobId: string | null, durationNanos: bigint | null): Promise<WorkflowRun>;
@@ -326,6 +329,34 @@ export class Backend implements backendInterface {
             }
         } else {
             const result = await this.actor.assignCallerUserRole(arg0, to_candid_UserRole_n8(this._uploadFile, this._downloadFile, arg1));
+            return result;
+        }
+    }
+    async cancelPendingWorkflowRunsForProvider(arg0: string): Promise<void> {
+        if (this.processError) {
+            try {
+                const result = await this.actor.cancelPendingWorkflowRunsForProvider(arg0);
+                return result;
+            } catch (e) {
+                this.processError(e);
+                throw new Error("unreachable");
+            }
+        } else {
+            const result = await this.actor.cancelPendingWorkflowRunsForProvider(arg0);
+            return result;
+        }
+    }
+    async cancelWorkflowRun(arg0: string): Promise<void> {
+        if (this.processError) {
+            try {
+                const result = await this.actor.cancelWorkflowRun(arg0);
+                return result;
+            } catch (e) {
+                this.processError(e);
+                throw new Error("unreachable");
+            }
+        } else {
+            const result = await this.actor.cancelWorkflowRun(arg0);
             return result;
         }
     }
@@ -564,6 +595,20 @@ export class Backend implements backendInterface {
             }
         } else {
             const result = await this.actor.providerKeyExists(arg0);
+            return result;
+        }
+    }
+    async saveCallerUserProfile(arg0: UserProfile): Promise<void> {
+        if (this.processError) {
+            try {
+                const result = await this.actor.saveCallerUserProfile(arg0);
+                return result;
+            } catch (e) {
+                this.processError(e);
+                throw new Error("unreachable");
+            }
+        } else {
+            const result = await this.actor.saveCallerUserProfile(arg0);
             return result;
         }
     }

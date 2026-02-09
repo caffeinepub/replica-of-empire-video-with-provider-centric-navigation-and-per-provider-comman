@@ -1,209 +1,165 @@
-import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
+import { Card, CardContent } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
-import { ScrollArea } from '@/components/ui/scroll-area';
 import { Badge } from '@/components/ui/badge';
-import { Download, Share2, Eye, RefreshCw } from 'lucide-react';
+import { Download, Share2, RotateCcw, Loader2, CheckCircle2, XCircle, Clock } from 'lucide-react';
 import { toast } from 'sonner';
 import type { WorkflowRun } from '@/backend';
-import { getArtifactDirectURL, downloadArtifact, generateArtifactFilename, getMimeTypeFromFilename } from '@/utils/artifacts';
+import type { WorkflowType } from '@/providers/providers';
 import { shareArtifact } from '@/utils/share';
-import { useState } from 'react';
 
 interface GenerationHistoryProps {
   runs: WorkflowRun[];
-  onReuseRun?: (run: WorkflowRun) => void;
-  isLoading?: boolean;
+  provider: string;
+  workflowType: WorkflowType;
 }
 
-export default function GenerationHistory({ runs, onReuseRun, isLoading }: GenerationHistoryProps) {
-  const [downloadingId, setDownloadingId] = useState<string | null>(null);
-  const [sharingId, setSharingId] = useState<string | null>(null);
-
+export function GenerationHistory({ runs, provider, workflowType }: GenerationHistoryProps) {
   const handleDownload = async (run: WorkflowRun) => {
     if (!run.outputBlobId) return;
 
-    setDownloadingId(run.id);
     try {
-      const isImage = run.workflowType === 'image-generation';
-      const isVideo = run.workflowType === 'video-generation';
-      const extension = isImage ? 'png' : isVideo ? 'mp4' : 'bin';
-      const filename = generateArtifactFilename(run.workflowType, run.provider, extension);
-      const mimeType = getMimeTypeFromFilename(filename);
+      const link = document.createElement('a');
+      link.href = run.outputBlobId;
+      link.download = `${provider}-${workflowType}-${run.id}.png`;
+      document.body.appendChild(link);
+      link.click();
+      document.body.removeChild(link);
       
-      await downloadArtifact(run.outputBlobId, filename, mimeType);
       toast.success('Download started');
-    } catch (error: any) {
-      toast.error(error.message || 'Download failed');
-    } finally {
-      setDownloadingId(null);
+    } catch (error) {
+      console.error('Download failed:', error);
+      toast.error('Failed to download');
     }
   };
 
   const handleShare = async (run: WorkflowRun) => {
     if (!run.outputBlobId) return;
 
-    setSharingId(run.id);
     try {
-      const url = getArtifactDirectURL(run.outputBlobId);
-      const title = `${run.provider} ${run.workflowType}`;
-      const result = await shareArtifact(url, title);
-      
-      if (result.success) {
-        toast.success(result.message);
-      } else {
-        toast.error(result.message);
-      }
-    } catch (error: any) {
-      toast.error('Share failed');
-    } finally {
-      setSharingId(null);
+      await shareArtifact(run.outputBlobId, `${provider} ${workflowType}`);
+    } catch (error) {
+      console.error('Share failed:', error);
+      toast.error('Failed to share');
     }
   };
 
-  const getStatusBadge = (status: WorkflowRun['status']) => {
-    switch (status.__kind__) {
-      case 'pending':
-        return <Badge variant="outline">Pending</Badge>;
-      case 'running':
-        return <Badge variant="outline" className="bg-blue-500/10 text-blue-500 border-blue-500/20">Running</Badge>;
-      case 'success':
-        return <Badge variant="outline" className="bg-green-500/10 text-green-500 border-green-500/20">Success</Badge>;
-      case 'failed':
-        return <Badge variant="destructive">Failed</Badge>;
-      default:
-        return null;
-    }
-  };
-
-  const getSummary = (run: WorkflowRun): string => {
+  const handleReuse = (run: WorkflowRun) => {
     try {
       const inputs = JSON.parse(run.inputs);
-      if (inputs.prompt) {
-        return inputs.prompt.length > 60 ? inputs.prompt.substring(0, 60) + '...' : inputs.prompt;
-      }
-      if (inputs.model) {
-        return `Model: ${inputs.model}`;
-      }
-      return 'No description';
-    } catch (e) {
-      return 'No description';
+      // This would ideally populate the form, but for now just show a toast
+      toast.info('Copy the prompt from this generation to reuse it');
+    } catch (error) {
+      console.error('Failed to parse inputs:', error);
     }
   };
 
-  if (isLoading) {
-    return (
-      <Card>
-        <CardHeader>
-          <CardTitle className="flex items-center gap-2">
-            <RefreshCw className="h-5 w-5 animate-spin" />
-            Loading History...
-          </CardTitle>
-        </CardHeader>
-      </Card>
-    );
-  }
+  const getStatusIcon = (status: WorkflowRun['status']) => {
+    switch (status.__kind__) {
+      case 'pending':
+        return <Clock className="h-3 w-3" />;
+      case 'running':
+        return <Loader2 className="h-3 w-3 animate-spin" />;
+      case 'success':
+        return <CheckCircle2 className="h-3 w-3" />;
+      case 'failed':
+        return <XCircle className="h-3 w-3" />;
+    }
+  };
 
   if (runs.length === 0) {
-    return (
-      <Card>
-        <CardHeader>
-          <CardTitle>Generation History</CardTitle>
-        </CardHeader>
-        <CardContent>
-          <p className="text-sm text-muted-foreground">No generation history yet. Create your first generation above.</p>
-        </CardContent>
-      </Card>
-    );
+    return null;
   }
 
   return (
-    <Card>
-      <CardHeader>
-        <CardTitle>Generation History</CardTitle>
-      </CardHeader>
-      <CardContent>
-        <ScrollArea className="h-[400px] pr-4">
-          <div className="space-y-3">
-            {runs.map((run) => (
-              <div
-                key={run.id}
-                className="rounded-lg border p-4 space-y-3 hover:bg-muted/50 transition-colors"
-              >
-                <div className="flex items-start justify-between gap-2">
-                  <div className="flex-1 min-w-0">
-                    <div className="flex items-center gap-2 mb-1">
-                      {getStatusBadge(run.status)}
-                      <span className="text-xs text-muted-foreground">
-                        {new Date(Number(run.timestamp) / 1000000).toLocaleString()}
-                      </span>
-                    </div>
-                    <p className="text-sm text-muted-foreground truncate">
-                      {getSummary(run)}
-                    </p>
-                  </div>
-                </div>
+    <div className="grid gap-3 sm:grid-cols-2 lg:grid-cols-3">
+      {runs.map((run) => {
+        const isComplete = run.status.__kind__ === 'success';
+        const isFailed = run.status.__kind__ === 'failed';
 
-                {/* Preview thumbnail for successful runs */}
-                {run.status.__kind__ === 'success' && run.outputBlobId && (
-                  <div className="rounded overflow-hidden border bg-muted">
-                    {run.workflowType === 'image-generation' && (
-                      <img
-                        src={getArtifactDirectURL(run.outputBlobId)}
-                        alt="Generated"
-                        className="w-full h-32 object-cover"
-                      />
-                    )}
-                    {run.workflowType === 'video-generation' && (
-                      <video
-                        src={getArtifactDirectURL(run.outputBlobId)}
-                        className="w-full h-32 object-cover"
-                      />
-                    )}
-                  </div>
+        return (
+          <Card key={run.id} className="overflow-hidden">
+            <CardContent className="p-3 space-y-2">
+              <div className="flex items-center justify-between">
+                <Badge variant={isComplete ? 'default' : isFailed ? 'destructive' : 'outline'} className="gap-1">
+                  {getStatusIcon(run.status)}
+                  {run.status.__kind__}
+                </Badge>
+                {run.durationNanos && (
+                  <span className="text-xs text-muted-foreground">
+                    {(Number(run.durationNanos) / 1_000_000_000).toFixed(1)}s
+                  </span>
                 )}
+              </div>
 
-                {/* Actions */}
-                <div className="flex flex-wrap gap-2">
-                  {run.status.__kind__ === 'success' && run.outputBlobId && (
-                    <>
-                      <Button
-                        size="sm"
-                        variant="outline"
-                        onClick={() => handleDownload(run)}
-                        disabled={downloadingId === run.id}
-                      >
-                        <Download className="mr-1 h-3 w-3" />
-                        {downloadingId === run.id ? 'Downloading...' : 'Download'}
-                      </Button>
-
-                      <Button
-                        size="sm"
-                        variant="outline"
-                        onClick={() => handleShare(run)}
-                        disabled={sharingId === run.id}
-                      >
-                        <Share2 className="mr-1 h-3 w-3" />
-                        {sharingId === run.id ? 'Sharing...' : 'Share'}
-                      </Button>
-                    </>
-                  )}
-
-                  {onReuseRun && (
-                    <Button
-                      size="sm"
-                      variant="ghost"
-                      onClick={() => onReuseRun(run)}
-                    >
-                      <RefreshCw className="mr-1 h-3 w-3" />
-                      Reuse
-                    </Button>
+              {isComplete && run.outputBlobId && (
+                <div className="relative aspect-square w-full overflow-hidden rounded border bg-muted">
+                  {workflowType === 'video-generation' ? (
+                    <video
+                      src={run.outputBlobId}
+                      className="h-full w-full object-cover"
+                    />
+                  ) : (
+                    <img
+                      src={run.outputBlobId}
+                      alt="Generated content"
+                      className="h-full w-full object-cover"
+                    />
                   )}
                 </div>
-              </div>
-            ))}
-          </div>
-        </ScrollArea>
-      </CardContent>
-    </Card>
+              )}
+
+              {isFailed && run.status.__kind__ === 'failed' && (
+                <div className="text-xs text-destructive line-clamp-2">
+                  {run.status.failed}
+                </div>
+              )}
+
+              {run.inputs && (
+                <p className="text-xs text-muted-foreground line-clamp-2">
+                  {(() => {
+                    try {
+                      const inputs = JSON.parse(run.inputs);
+                      return inputs.prompt || inputs.script || 'No prompt';
+                    } catch {
+                      return run.inputs;
+                    }
+                  })()}
+                </p>
+              )}
+
+              {isComplete && run.outputBlobId && (
+                <div className="flex gap-1">
+                  <Button
+                    variant="ghost"
+                    size="sm"
+                    onClick={() => handleReuse(run)}
+                    className="flex-1 h-8 text-xs"
+                  >
+                    <RotateCcw className="mr-1 h-3 w-3" />
+                    Reuse
+                  </Button>
+                  <Button
+                    variant="ghost"
+                    size="sm"
+                    onClick={() => handleDownload(run)}
+                    className="h-8 px-2"
+                  >
+                    <Download className="h-3 w-3" />
+                  </Button>
+                  <Button
+                    variant="ghost"
+                    size="sm"
+                    onClick={() => handleShare(run)}
+                    className="h-8 px-2"
+                  >
+                    <Share2 className="h-3 w-3" />
+                  </Button>
+                </div>
+              )}
+            </CardContent>
+          </Card>
+        );
+      })}
+    </div>
   );
 }

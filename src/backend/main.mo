@@ -10,9 +10,7 @@ import Principal "mo:core/Principal";
 import MixinStorage "blob-storage/Mixin";
 import MixinAuthorization "authorization/MixinAuthorization";
 import AccessControl "authorization/access-control";
-import Migration "migration";
 
-(with migration = Migration.run)
 actor {
   // Key Management Types
   public type APIKey = {
@@ -88,6 +86,13 @@ actor {
       Runtime.trap("Unauthorized: Can only view your own profile");
     };
     userProfiles.get(user);
+  };
+
+  public shared ({ caller }) func saveCallerUserProfile(profile : UserProfile) : async () {
+    if (not (AccessControl.hasPermission(accessControlState, caller, #user))) {
+      Runtime.trap("Unauthorized: Only users can save profiles");
+    };
+    userProfiles.add(caller, profile);
   };
 
   // Custom Provider Management per User
@@ -429,5 +434,71 @@ actor {
   public query ({ caller }) func getCurrentUser() : async Principal {
     caller;
   };
-};
 
+  // Cancel Specific Workflow Run
+  public shared ({ caller }) func cancelWorkflowRun(runId : Text) : async () {
+    if (not (AccessControl.hasPermission(accessControlState, caller, #user))) {
+      Runtime.trap("Unauthorized: Only users can cancel workflow runs");
+    };
+
+    var runFound = false;
+
+    switch (workflowRuns.get(caller)) {
+      case (?userRuns) {
+        for ((provider, runs) in userRuns.entries()) {
+          let updatedRuns = runs.map<WorkflowRun, WorkflowRun>(
+            func(run) {
+              if (run.id == runId and (run.status == #pending or run.status == #running)) {
+                runFound := true;
+                { run with status = #failed("Cancelled by the user."); };
+              } else if (run.id == runId) {
+                runFound := true;
+                return run;
+              } else {
+                run;
+              };
+            }
+          );
+          userRuns.add(provider, updatedRuns);
+        };
+      };
+      case null {
+        Runtime.trap("No workflow runs found for user;");
+      };
+    };
+
+    if (not runFound) {
+      Runtime.trap("Run could not be cancelled. Either the workflow run does not exist or it has already been finished.");
+    };
+  };
+
+  // Cancel all pending workflow runs for a provider
+  public shared ({ caller }) func cancelPendingWorkflowRunsForProvider(provider : Text) : async () {
+    if (not (AccessControl.hasPermission(accessControlState, caller, #user))) {
+      Runtime.trap("Unauthorized: Only users can cancel workflow runs");
+    };
+
+    switch (workflowRuns.get(caller)) {
+      case (?userRuns) {
+        for ((currentProvider, runs) in userRuns.entries()) {
+          if (currentProvider == provider) {
+            let updatedRuns = runs.map<WorkflowRun, WorkflowRun>(
+              func(run) {
+                switch (run.status) {
+                  case (#pending or #running) {
+                    { run with status = #failed("Cancelled due to bulk cancellation"); };
+                  };
+                  case (_) { run };
+                };
+              }
+            );
+            userRuns.add(currentProvider, updatedRuns);
+          };
+        };
+      };
+      case null {
+        Runtime.trap("No workflow runs found for user");
+      };
+    };
+  };
+};

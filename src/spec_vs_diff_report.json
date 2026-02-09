@@ -1,127 +1,51 @@
 {
   "kind": "spec_vs_diff_report",
   "version": "1.0",
-  "generatedAt": "2026-02-09T02:31:22.900Z",
-  "summary": "The diff adds frontend workflow execution UI components (GenerationResult/History, ExecutionResultPanel) and React Query hooks that call new backend actor methods (executeWorkflow/getWorkflowRuns/updateWorkflowRun), plus a backend stable-state migration introducing persisted workflowRuns. However, the diff summary does not show the backend workflow execution/artifact APIs being implemented, and artifact download/storage is explicitly left as a placeholder on the frontend, so the end-to-end “execute → show result → download/share” flow (especially Fal.ai image generation) is not fully implemented based on the provided evidence.",
-  "missing_requirements": [
-    {
-      "id": "REQ-34",
-      "requirement": "Implement backend workflow execution APIs: create run, query status, fetch artifacts/outputs without exposing stored provider keys; enforce #user authorization and use existing per-user provider key storage.",
-      "reason": "Frontend calls actor.executeWorkflow, actor.getWorkflowRuns, and actor.updateWorkflowRun, but the diff summary does not show these methods (or any artifact fetch API) implemented in backend/main.mo; only migration state types are visible.",
-      "evidence": [
-        "frontend/src/hooks/workflows/useWorkflowExecution.ts",
-        "frontend/src/hooks/workflows/useWorkflowRuns.ts",
-        "backend/main.mo (truncated)",
-        "backend/migration.mo"
-      ]
-    },
-    {
-      "id": "REQ-36",
-      "requirement": "Use canister-side storage for generated artifacts and provide an API to retrieve an artifact by id so download/share works without the frontend calling providers directly.",
-      "reason": "Frontend artifact utilities are explicitly placeholders: getArtifactDirectURL returns the blobId as-is and downloadArtifact throws 'not yet implemented', indicating blob retrieval/download is not wired to canister storage APIs.",
-      "evidence": [
-        "frontend/src/utils/artifacts.ts",
-        "frontend/src/components/workflows/GenerationResult.tsx (truncated)",
-        "frontend/src/components/workflows/GenerationHistory.tsx (truncated)"
-      ]
-    },
-    {
-      "id": "REQ-37",
-      "requirement": "Implement Fal.ai image generation end-to-end: prompt input, multi-model selection, generate, show preview, download, share.",
-      "reason": "While the provider registry summary mentions Fal.ai multi-model support, the shown workflow execution path is generic and artifact download is not implemented; there is no evidence of a real Fal.ai backend integration producing stored blobs for preview/download/share.",
-      "evidence": [
-        "frontend/src/providers/providers.ts (truncated)",
-        "frontend/src/utils/artifacts.ts",
-        "frontend/src/hooks/workflows/useWorkflowExecution.ts",
-        "backend/main.mo (truncated)"
-      ]
-    },
-    {
-      "id": "REQ-33",
-      "requirement": "Replace placeholder workflow UI (“Not Integrated Yet”) with working execution flows; Fal.ai image generation should not show the callout and should run for real once credential exists.",
-      "reason": "The diff adds execution UI, but there is no evidence that the existing NotIntegratedCallout is removed/avoided for Fal.ai specifically, and core execution+artifact retrieval appears incomplete (download placeholder; backend methods not evidenced).",
-      "evidence": [
-        "frontend/src/components/common/NotIntegratedCallout.tsx (frontend-file-summaries.txt)",
-        "frontend/src/components/providers/ProviderToolsOptionsSection.tsx (truncated)",
-        "frontend/src/utils/artifacts.ts"
-      ]
-    },
-    {
-      "id": "REQ-38",
-      "requirement": "Upgrade ProviderToolsOptionsSection so primary workflow actions are enabled when ProviderActionGuard passes (backend ready + key exists) and call backend execution APIs; remove NotIntegratedCallout for wired cards (at minimum Fal.ai image-generation).",
-      "reason": "ProviderToolsOptionsSection only checks backend readiness (isReady) before executing; the diff summary does not show gating on provider key existence (useProviderKey / ProviderActionGuard pass condition) within the component, nor explicit removal of NotIntegratedCallout usage for workflow cards.",
-      "evidence": [
-        "frontend/src/components/providers/ProviderToolsOptionsSection.tsx (truncated)"
-      ]
-    },
-    {
-      "id": "REQ-39",
-      "requirement": "Reusable Generation Result pattern must support preview plus functional Download and Share with correct filenames/extensions and Web Share API fallback.",
-      "reason": "GenerationResult/History UI exists and calls download/share helpers, but downloadArtifact is not implemented and direct URLs are placeholders, so Download/Share is not functional as required.",
-      "evidence": [
-        "frontend/src/components/workflows/GenerationResult.tsx (truncated)",
-        "frontend/src/components/workflows/GenerationHistory.tsx (truncated)",
-        "frontend/src/utils/artifacts.ts",
-        "frontend/src/utils/share.ts"
-      ]
-    },
-    {
-      "id": "REQ-40",
-      "requirement": "Apply the same execution approach across all providers with workflowType using backend execution APIs so actions actually run when keys are configured; integration/app-builder show structured results.",
-      "reason": "Frontend wiring is generic, but there is no evidence of backend implementations per workflowType/provider (image/video/integration/app-builder/custom), nor evidence of structured results for integration/app-builder beyond a generic ExecutionResultPanel.",
-      "evidence": [
-        "frontend/src/components/providers/ProviderToolsOptionsSection.tsx (truncated)",
-        "frontend/src/hooks/workflows/useWorkflowExecution.ts",
-        "backend/main.mo (truncated)"
-      ]
-    },
-    {
-      "id": "REQ-41",
-      "requirement": "Gate workflow execution UI on backend readiness signals (isReady/isConnecting) and provider key existence; show clear English messaging when connecting/unavailable; do not run mutations when actor null or isReady false.",
-      "reason": "Hooks correctly block when actor/isReady are false, but ProviderToolsOptionsSection does not show connecting/unavailable messaging ('Connecting to backend…') and does not demonstrate provider-key gating; useWorkflowRuns throws 'Actor not available' (not user-friendly) if actor is null.",
-      "evidence": [
-        "frontend/src/hooks/workflows/useWorkflowExecution.ts",
-        "frontend/src/hooks/workflows/useWorkflowRuns.ts",
-        "frontend/src/components/providers/ProviderToolsOptionsSection.tsx (truncated)"
-      ]
-    }
-  ],
+  "generatedAt": "2026-02-09T08:17:28.109Z",
+  "summary": "Diff adds client-side image generation support (new hook + image generation service with OpenAI/Fal.ai/Stability integrations), updates provider tool execution UI to auto-run image generation workflows, expands routing/pages, and introduces backend endpoints/types for custom provider metadata and other state. No explicit REQ-* requirements were provided in the BuildRequest; however, the diff appears to violate the stated constraint that provider credentials must never be returned to the frontend.",
+  "missing_requirements": [],
   "hallucinated_features": [
     {
-      "description": "Backend API for updating workflow runs from the frontend (actor.updateWorkflowRun) and corresponding client hook useWorkflowRunUpdate.",
-      "reason": "REQ-34 specifies create run, query status, and fetch artifacts/outputs; it does not request a client-exposed 'update run' API (status/output/duration) callable from the UI.",
+      "description": "Frontend retrieves raw provider API keys from the backend and uses them directly in browser-side calls to third-party image APIs.",
+      "reason": "BuildRequest constraint: \"Provider credentials must remain stored only in the backend and must never be returned to the frontend beyond key existence/entry flows.\" The new hook calls `actor.getProviderKey(provider)` and then passes `apiKeyData.key` into `generateImage(...)`, implying the backend returns the key to the frontend.",
       "evidence": [
-        "frontend/src/hooks/workflows/useWorkflowExecution.ts"
+        "frontend/src/hooks/workflows/useImageGeneration.ts",
+        "frontend/src/services/imageGeneration.ts"
       ]
     },
     {
-      "description": "Artifact direct URL behavior implemented as returning blobId 'as-is' with comments stating blob storage integration is not present yet.",
-      "reason": "REQ-36 expects canister-side blob storage integration and artifact retrieval by id; returning the id as a URL is an ad-hoc behavior not requested and contradicts the requirement for proper canister retrieval/download.",
+      "description": "Direct third-party image generation API integrations executed from the frontend (OpenAI images endpoint, Fal.run, Stability AI).",
+      "reason": "The BuildRequest does not specify implementing browser-side integrations, and the constraints emphasize credentials staying only in the backend; implementing these provider API calls in the frontend is an unrequested/unsupported approach under those constraints.",
       "evidence": [
-        "frontend/src/utils/artifacts.ts"
+        "frontend/src/services/imageGeneration.ts"
+      ]
+    },
+    {
+      "description": "Custom provider display-name metadata editing flow (per-user) including backend storage and UI editing controls.",
+      "reason": "Not requested by the BuildRequest (no explicit requirements) and extends functionality beyond \"Enable image generation across all providers\".",
+      "evidence": [
+        "backend/main.mo",
+        "frontend/src/pages/providers/CustomSlotProviderPage.tsx"
       ]
     }
   ],
-  "confidence": 0.66,
+  "confidence": 0.74,
   "changed_files": [
     "backend/main.mo",
-    "backend/migration.mo",
     "frontend-file-summaries.txt",
+    "frontend/src/App.tsx",
     "frontend/src/components/providers/ProviderToolsOptionsSection.tsx",
-    "frontend/src/components/workflows/ExecutionResultPanel.tsx",
     "frontend/src/components/workflows/GenerationHistory.tsx",
     "frontend/src/components/workflows/GenerationResult.tsx",
-    "frontend/src/hooks/workflows/useWorkflowExecution.ts",
-    "frontend/src/hooks/workflows/useWorkflowRuns.ts",
+    "frontend/src/hooks/workflows/useImageGeneration.ts",
     "frontend/src/pages/providers/CustomSlotProviderPage.tsx",
     "frontend/src/pages/providers/GenericProviderPage.tsx",
     "frontend/src/pages/providers/LTXPage.tsx",
+    "frontend/src/pages/providers/OpenAIPage.tsx",
     "frontend/src/pages/providers/ReplicatePage.tsx",
     "frontend/src/pages/providers/RunPodPage.tsx",
     "frontend/src/pages/providers/SlackPage.tsx",
-    "frontend/src/providers/providers.ts",
-    "frontend/src/utils/artifacts.ts",
-    "frontend/src/utils/share.ts",
+    "frontend/src/services/imageGeneration.ts",
     "project_state.json"
   ]
 }

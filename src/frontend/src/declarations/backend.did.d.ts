@@ -80,6 +80,8 @@ export interface _SERVICE {
   'addChatMessage' : ActorMethod<[string, string], undefined>,
   'addOrUpdateAPIKey' : ActorMethod<[string, string], undefined>,
   'assignCallerUserRole' : ActorMethod<[Principal, UserRole], undefined>,
+  'cancelPendingWorkflowRunsForProvider' : ActorMethod<[string], undefined>,
+  'cancelWorkflowRun' : ActorMethod<[string], undefined>,
   'customProviderMetadataExists' : ActorMethod<[string], boolean>,
   'executeWorkflow' : ActorMethod<[string, string, string], WorkflowRun>,
   'getAllAPIKeys' : ActorMethod<[], Array<[Principal, Array<APIKey>]>>,
@@ -106,6 +108,7 @@ export interface _SERVICE {
   'initializeProviders' : ActorMethod<[Array<ProviderInfo>], undefined>,
   'isCallerAdmin' : ActorMethod<[], boolean>,
   'providerKeyExists' : ActorMethod<[string], boolean>,
+  'saveCallerUserProfile' : ActorMethod<[UserProfile], undefined>,
   'setCustomProviderMetadata' : ActorMethod<[string, string], undefined>,
   'streamChatMessages' : ActorMethod<[string, bigint], Array<ChatMessage>>,
   'updateWorkflowRun' : ActorMethod<

@@ -6,166 +6,92 @@ import { Textarea } from '@/components/ui/textarea';
 import { Label } from '@/components/ui/label';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Alert, AlertDescription } from '@/components/ui/alert';
-import { Video, Image, Wrench, Loader2, AlertCircle } from 'lucide-react';
+import { Video, Image, Wrench, Loader2, AlertCircle, Trash2 } from 'lucide-react';
 import { toast } from 'sonner';
 import type { WorkflowType, OptionField } from '@/providers/providers';
 import type { WorkflowRun } from '@/backend';
 import { useWorkflowExecution } from '@/hooks/workflows/useWorkflowExecution';
 import { useWorkflowRuns } from '@/hooks/workflows/useWorkflowRuns';
-import { useBackendActor } from '@/hooks/useBackendActor';
-import GenerationResult from '@/components/workflows/GenerationResult';
+import { useImageGeneration } from '@/hooks/workflows/useImageGeneration';
+import { useClearPendingWorkflowRunsForProvider } from '@/hooks/workflows/useClearPendingWorkflowRunsForProvider';
+import { GenerationResult } from '@/components/workflows/GenerationResult';
 import ExecutionResultPanel from '@/components/workflows/ExecutionResultPanel';
-import GenerationHistory from '@/components/workflows/GenerationHistory';
-import { getUserFriendlyErrorMessage } from '@/utils/backendErrorMessages';
+import { GenerationHistory } from '@/components/workflows/GenerationHistory';
 
 interface ProviderToolsOptionsSectionProps {
-  providerId: string;
-  providerName: string;
-  workflowType: WorkflowType;
+  provider: string;
+  workflowType?: WorkflowType;
   optionFields?: OptionField[];
 }
 
-export default function ProviderToolsOptionsSection({
-  providerId,
-  providerName,
-  workflowType,
+export function ProviderToolsOptionsSection({
+  provider,
+  workflowType = 'custom',
   optionFields = [],
 }: ProviderToolsOptionsSectionProps) {
-  const { isReady, isConnecting } = useBackendActor();
+  const [formValues, setFormValues] = useState<Record<string, any>>({});
   const executeWorkflow = useWorkflowExecution();
-  const { data: runs = [], isLoading: runsLoading } = useWorkflowRuns(providerId);
+  const { data: workflowRuns = [], isLoading: runsLoading } = useWorkflowRuns(provider);
+  const clearPendingRuns = useClearPendingWorkflowRunsForProvider();
+  const { generateImageForRun, isGenerating } = useImageGeneration({ provider });
 
-  const [formValues, setFormValues] = useState<Record<string, string | number>>(() => {
-    const initial: Record<string, string | number> = {};
+  // Initialize form with default values
+  useEffect(() => {
+    const defaults: Record<string, any> = {};
     optionFields.forEach((field) => {
       if (field.defaultValue !== undefined) {
-        initial[field.id] = field.defaultValue;
+        defaults[field.id] = field.defaultValue;
       }
     });
-    return initial;
-  });
+    setFormValues(defaults);
+  }, [optionFields]);
 
-  const [currentRun, setCurrentRun] = useState<WorkflowRun | null>(null);
-
-  // Update current run when runs change
-  useEffect(() => {
-    if (currentRun && runs.length > 0) {
-      const updated = runs.find(r => r.id === currentRun.id);
-      if (updated) {
-        setCurrentRun(updated);
-      }
-    }
-  }, [runs, currentRun]);
-
-  const handleFieldChange = (fieldId: string, value: string | number) => {
+  const handleFieldChange = (fieldId: string, value: any) => {
     setFormValues((prev) => ({ ...prev, [fieldId]: value }));
   };
 
   const handleExecute = async () => {
-    if (!isReady) {
-      toast.error('Backend is not ready. Please wait a moment.');
-      return;
-    }
-
     try {
+      // Validate required fields
+      const missingFields = optionFields
+        .filter((field) => !formValues[field.id] && field.type !== 'number')
+        .map((field) => field.label);
+
+      if (missingFields.length > 0) {
+        toast.error(`Please fill in: ${missingFields.join(', ')}`);
+        return;
+      }
+
+      // Create workflow run
       const run = await executeWorkflow.mutateAsync({
-        provider: providerId,
+        provider,
         workflowType,
         inputs: formValues,
       });
-      
-      setCurrentRun(run);
-      toast.success('Workflow started successfully');
+
+      // For image generation workflows, automatically start generation
+      if (workflowType === 'image-generation') {
+        await generateImageForRun(run, formValues);
+      } else {
+        toast.success('Workflow started successfully!');
+      }
     } catch (error: any) {
-      const message = getUserFriendlyErrorMessage(error);
-      toast.error(message);
+      console.error('Workflow execution error:', error);
+      toast.error(error.message || 'Failed to execute workflow');
     }
   };
 
-  const handleReuseRun = (run: WorkflowRun) => {
+  const handleClearPending = async () => {
     try {
-      const inputs = JSON.parse(run.inputs);
-      setFormValues(inputs);
-      toast.success('Parameters loaded');
-    } catch (e) {
-      toast.error('Failed to load parameters');
+      await clearPendingRuns.mutateAsync({ provider });
+      toast.success('Pending generations cleared');
+    } catch (error: any) {
+      console.error('Clear pending error:', error);
+      toast.error(error.message || 'Failed to clear pending generations');
     }
   };
 
-  const renderField = (field: OptionField) => {
-    const value = formValues[field.id] || '';
-
-    switch (field.type) {
-      case 'text':
-        return (
-          <div key={field.id} className="space-y-2">
-            <Label htmlFor={field.id}>{field.label}</Label>
-            <Input
-              id={field.id}
-              type="text"
-              placeholder={field.placeholder}
-              value={value as string}
-              onChange={(e) => handleFieldChange(field.id, e.target.value)}
-            />
-          </div>
-        );
-
-      case 'textarea':
-        return (
-          <div key={field.id} className="space-y-2">
-            <Label htmlFor={field.id}>{field.label}</Label>
-            <Textarea
-              id={field.id}
-              placeholder={field.placeholder}
-              value={value as string}
-              onChange={(e) => handleFieldChange(field.id, e.target.value)}
-              rows={4}
-            />
-          </div>
-        );
-
-      case 'select':
-        return (
-          <div key={field.id} className="space-y-2">
-            <Label htmlFor={field.id}>{field.label}</Label>
-            <Select
-              value={value as string}
-              onValueChange={(val) => handleFieldChange(field.id, val)}
-            >
-              <SelectTrigger id={field.id}>
-                <SelectValue placeholder={field.placeholder || 'Select...'} />
-              </SelectTrigger>
-              <SelectContent>
-                {field.options?.map((option) => (
-                  <SelectItem key={option} value={option}>
-                    {option}
-                  </SelectItem>
-                ))}
-              </SelectContent>
-            </Select>
-          </div>
-        );
-
-      case 'number':
-        return (
-          <div key={field.id} className="space-y-2">
-            <Label htmlFor={field.id}>{field.label}</Label>
-            <Input
-              id={field.id}
-              type="number"
-              placeholder={field.placeholder}
-              value={value as number}
-              onChange={(e) => handleFieldChange(field.id, parseFloat(e.target.value) || 0)}
-            />
-          </div>
-        );
-
-      default:
-        return null;
-    }
-  };
-
-  const getCardIcon = () => {
+  const getIcon = () => {
     switch (workflowType) {
       case 'video-generation':
         return <Video className="h-5 w-5" />;
@@ -176,7 +102,7 @@ export default function ProviderToolsOptionsSection({
     }
   };
 
-  const getCardTitle = () => {
+  const getTitle = () => {
     switch (workflowType) {
       case 'video-generation':
         return 'Video Generation';
@@ -186,112 +112,185 @@ export default function ProviderToolsOptionsSection({
         return 'Integration Tools';
       case 'app-builder':
         return 'App Builder';
-      case 'custom':
-        return 'Custom Workflow';
       default:
         return 'Workflow Tools';
     }
   };
 
-  const getCardDescription = () => {
+  const getDescription = () => {
     switch (workflowType) {
       case 'video-generation':
-        return `Create videos with ${providerName}`;
+        return 'Configure and generate videos using AI models';
       case 'image-generation':
-        return `Create images with ${providerName}`;
+        return 'Configure and generate images using AI models';
       case 'integration':
-        return `Execute ${providerName} integration workflows`;
+        return 'Configure integration settings and execute actions';
       case 'app-builder':
-        return `Build applications with ${providerName}`;
-      case 'custom':
-        return `Execute custom workflows with ${providerName}`;
+        return 'Build and deploy applications';
       default:
-        return `Execute workflows with ${providerName}`;
+        return 'Configure and execute custom workflows';
     }
   };
 
-  const isExecuting = executeWorkflow.isPending || 
-    (currentRun && (currentRun.status.__kind__ === 'pending' || currentRun.status.__kind__ === 'running'));
+  // Get the most recent run
+  const latestRun = workflowRuns.length > 0 ? workflowRuns[0] : null;
+  const isArtifactWorkflow = workflowType === 'image-generation' || workflowType === 'video-generation';
 
-  const canExecute = isReady && !isExecuting;
+  // Check if there are any pending/running runs
+  const hasPendingRuns = workflowRuns.some(
+    (run) => run.status.__kind__ === 'pending' || run.status.__kind__ === 'running'
+  );
+
+  const isExecuting = executeWorkflow.isPending || isGenerating;
 
   return (
     <div className="space-y-6">
       <Card>
         <CardHeader>
-          <CardTitle className="flex items-center gap-2">
-            {getCardIcon()}
-            {getCardTitle()}
-          </CardTitle>
-          <CardDescription>{getCardDescription()}</CardDescription>
+          <div className="flex items-center gap-2">
+            {getIcon()}
+            <CardTitle>{getTitle()}</CardTitle>
+          </div>
+          <CardDescription>{getDescription()}</CardDescription>
         </CardHeader>
         <CardContent className="space-y-4">
-          {/* Connection status */}
-          {isConnecting && (
+          {optionFields.length === 0 ? (
             <Alert>
-              <Loader2 className="h-4 w-4 animate-spin" />
-              <AlertDescription>Connecting to backend...</AlertDescription>
-            </Alert>
-          )}
-
-          {!isReady && !isConnecting && (
-            <Alert variant="destructive">
               <AlertCircle className="h-4 w-4" />
               <AlertDescription>
-                Backend is not available. Please check your connection and try again.
+                No workflow options configured for this provider yet.
               </AlertDescription>
             </Alert>
+          ) : (
+            <>
+              {optionFields.map((field) => (
+                <div key={field.id} className="space-y-2">
+                  <Label htmlFor={field.id}>{field.label}</Label>
+                  {field.type === 'text' && (
+                    <Input
+                      id={field.id}
+                      placeholder={field.placeholder}
+                      value={formValues[field.id] || ''}
+                      onChange={(e) => handleFieldChange(field.id, e.target.value)}
+                    />
+                  )}
+                  {field.type === 'textarea' && (
+                    <Textarea
+                      id={field.id}
+                      placeholder={field.placeholder}
+                      value={formValues[field.id] || ''}
+                      onChange={(e) => handleFieldChange(field.id, e.target.value)}
+                      rows={4}
+                    />
+                  )}
+                  {field.type === 'number' && (
+                    <Input
+                      id={field.id}
+                      type="number"
+                      placeholder={field.placeholder}
+                      value={formValues[field.id] ?? field.defaultValue ?? ''}
+                      onChange={(e) => handleFieldChange(field.id, parseFloat(e.target.value))}
+                    />
+                  )}
+                  {field.type === 'select' && field.options && (
+                    <Select
+                      value={formValues[field.id] || field.defaultValue}
+                      onValueChange={(value) => handleFieldChange(field.id, value)}
+                    >
+                      <SelectTrigger id={field.id}>
+                        <SelectValue placeholder={`Select ${field.label.toLowerCase()}`} />
+                      </SelectTrigger>
+                      <SelectContent>
+                        {field.options.map((option) => (
+                          <SelectItem key={option} value={option}>
+                            {option}
+                          </SelectItem>
+                        ))}
+                      </SelectContent>
+                    </Select>
+                  )}
+                </div>
+              ))}
+
+              <Button
+                onClick={handleExecute}
+                disabled={isExecuting}
+                className="w-full"
+              >
+                {isExecuting ? (
+                  <>
+                    <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+                    {workflowType === 'image-generation' ? 'Generating...' : 'Executing...'}
+                  </>
+                ) : (
+                  <>
+                    {getIcon()}
+                    <span className="ml-2">
+                      {workflowType === 'image-generation' ? 'Generate Image' : 
+                       workflowType === 'video-generation' ? 'Generate Video' : 'Execute'}
+                    </span>
+                  </>
+                )}
+              </Button>
+            </>
           )}
-
-          {/* Option fields */}
-          {optionFields.map((field) => renderField(field))}
-
-          {/* Execute button */}
-          <Button
-            onClick={handleExecute}
-            disabled={!canExecute}
-            className="w-full"
-          >
-            {isExecuting ? (
-              <>
-                <Loader2 className="mr-2 h-4 w-4 animate-spin" />
-                Generating...
-              </>
-            ) : (
-              <>
-                {getCardIcon()}
-                <span className="ml-2">
-                  {workflowType === 'image-generation' && 'Generate Image'}
-                  {workflowType === 'video-generation' && 'Generate Video'}
-                  {workflowType === 'integration' && 'Execute Integration'}
-                  {workflowType === 'app-builder' && 'Build App'}
-                  {workflowType === 'custom' && 'Execute Workflow'}
-                  {workflowType === 'chat' && 'Start Chat'}
-                </span>
-              </>
-            )}
-          </Button>
         </CardContent>
       </Card>
 
-      {/* Current run result */}
-      {currentRun && (
+      {/* Current Generation Result */}
+      {latestRun && (
         <div className="space-y-4">
-          {(workflowType === 'image-generation' || workflowType === 'video-generation') ? (
-            <GenerationResult run={currentRun} onReuse={() => handleReuseRun(currentRun)} />
+          <div className="flex items-center justify-between">
+            <h3 className="text-lg font-semibold">Current Generation</h3>
+          </div>
+          {isArtifactWorkflow ? (
+            <GenerationResult run={latestRun} provider={provider} workflowType={workflowType} />
           ) : (
-            <ExecutionResultPanel run={currentRun} onReuse={() => handleReuseRun(currentRun)} />
+            <ExecutionResultPanel run={latestRun} />
           )}
         </div>
       )}
 
-      {/* History for image/video workflows */}
-      {(workflowType === 'image-generation' || workflowType === 'video-generation') && (
-        <GenerationHistory
-          runs={runs}
-          onReuseRun={handleReuseRun}
-          isLoading={runsLoading}
-        />
+      {/* Generation History */}
+      {workflowRuns.length > 1 && (
+        <div className="space-y-4">
+          <div className="flex items-center justify-between">
+            <h3 className="text-lg font-semibold">History</h3>
+            {provider === 'fal-ai' && hasPendingRuns && (
+              <Button
+                variant="outline"
+                size="sm"
+                onClick={handleClearPending}
+                disabled={clearPendingRuns.isPending}
+              >
+                {clearPendingRuns.isPending ? (
+                  <>
+                    <Loader2 className="mr-2 h-3 w-3 animate-spin" />
+                    Clearing...
+                  </>
+                ) : (
+                  <>
+                    <Trash2 className="mr-2 h-3 w-3" />
+                    Clear Pending
+                  </>
+                )}
+              </Button>
+            )}
+          </div>
+          {isArtifactWorkflow ? (
+            <GenerationHistory
+              runs={workflowRuns.slice(1)}
+              provider={provider}
+              workflowType={workflowType}
+            />
+          ) : (
+            <div className="space-y-2">
+              {workflowRuns.slice(1).map((run) => (
+                <ExecutionResultPanel key={run.id} run={run} />
+              ))}
+            </div>
+          )}
+        </div>
       )}
     </div>
   );

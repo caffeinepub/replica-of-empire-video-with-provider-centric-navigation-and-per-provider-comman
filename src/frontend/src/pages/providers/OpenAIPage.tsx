@@ -4,8 +4,7 @@ import ProviderKeyManager from '@/components/keys/ProviderKeyManager';
 import ChatbotCommandCenter from '@/components/chat/ChatbotCommandCenter';
 import ProviderActionGuard from '@/components/providers/ProviderActionGuard';
 import RecommendedPrompts from '@/components/providers/RecommendedPrompts';
-import ProviderToolsOptionsSection from '@/components/providers/ProviderToolsOptionsSection';
-import NotIntegratedCallout from '@/components/common/NotIntegratedCallout';
+import { ProviderToolsOptionsSection } from '@/components/providers/ProviderToolsOptionsSection';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 
@@ -60,9 +59,12 @@ export default function OpenAIPage() {
                 <CardDescription className="text-sm">Generate images from text prompts using DALL-E 3</CardDescription>
               </CardHeader>
               <CardContent>
-                <NotIntegratedCallout
-                  feature="Image Generation"
-                  description="DALL-E 3 integration requires client-side API calls which will be implemented in a future update."
+                <ProviderToolsOptionsSection
+                  provider={provider.id}
+                  workflowType="image-generation"
+                  optionFields={[
+                    { id: 'prompt', label: 'Image Prompt', type: 'textarea', placeholder: 'Describe the image you want to generate...' },
+                  ]}
                 />
               </CardContent>
             </Card>
@@ -74,9 +76,10 @@ export default function OpenAIPage() {
                 <CardDescription className="text-sm">Analyze text with GPT-4 models</CardDescription>
               </CardHeader>
               <CardContent>
-                <NotIntegratedCallout
-                  feature="Text Analysis"
-                  description="Advanced text analysis tools are planned for a future release."
+                <ProviderToolsOptionsSection
+                  provider={provider.id}
+                  workflowType="custom"
+                  optionFields={[]}
                 />
               </CardContent>
             </Card>

@@ -1,7 +1,7 @@
 {
   "schemaVersion": "1.0.0",
-  "projectStateVersion": 17,
-  "summary": "Replica of the Empire Video+ app, extended with a provider-centric UI where each AI provider has its own dedicated page with its own chatbot/command box and provider-specific options/workflows tailored to that provider’s capabilities, and with real provider API integrations so workflows (e.g., image generation) actually execute once keys are uploaded (including multi-model support where applicable).",
+  "projectStateVersion": 27,
+  "summary": "Replica of the Empire Video+ app, extended with a provider-centric UI where each AI provider has its own dedicated page with its own chatbot/command box and provider-specific options/workflows tailored to that provider’s capabilities, with real provider API integrations once keys are uploaded, branded as “Empire C.C” with a global footer credit and an in-app Terms & Conditions page.",
   "architectural_notes": [
     "Adopt a provider-module architecture (routing + UI + services per provider) so each provider page can be isolated while sharing common components.",
     "Persist chatbot context/history per provider (separate storage namespaces/keys per provider) to prevent cross-provider context mixing.",
@@ -9,13 +9,17 @@
     "Each provider page should include a capability summary/list specific to that provider (even if initially static/placeholder).",
     "Make provider pages capability-driven: render provider-specific UI modules/workflows (e.g., app builder, video generator) based on provider capability metadata rather than a one-size-fits-all page.",
     "Maintain a per-provider library of recommended prompt templates tied to capabilities and surface them contextually on each provider page.",
-    "Replace 'Not Integrated Yet' placeholders with capability-driven provider execution adapters/services so provider pages can perform real API calls once credentials are present (including multi-model selection support where applicable)."
+    "Replace 'Not Integrated Yet' placeholders with capability-driven provider execution adapters/services so provider pages can perform real API calls once credentials are present (including multi-model selection support where applicable).",
+    "Owner/admin API keys should be stored server-side and never exposed to non-owner users; runtime selects user key first, otherwise falls back to owner key for that provider.",
+    "Add a password-protected Admin panel for managing owner keys, referral links, and promo codes; Admin-only authorization required for all related backend APIs.",
+    "Generation runs should have cancellable lifecycle support where providers allow it; cancellation is scoped to current user + provider and reflected in UI state/history."
   ],
   "known_issues": [
     "Fal.ai provider is not working (provider page/flow failing to function as expected).",
     "Fal.ai upload/action fails with error \"Actor is not available\" when trying to use/upload with Fal.ai key.",
     "Fal.ai key save can fail when backend canister is stopped (Reject code 5 / IC0508), causing 'Actor is not available' errors until actor/canister is running.",
-    "Image generation UI is currently a placeholder ('Not Integrated Yet'); clicking Generate does not call provider APIs (e.g., Fal.ai) yet."
+    "Image generation UI is currently a placeholder ('Not Integrated Yet'); clicking Generate does not call provider APIs (e.g., Fal.ai) yet.",
+    "Fal.ai image generation can get stuck on 'loading' after clicking Generate even with a valid saved key."
   ],
   "isFixRequest": true,
   "existing_features": [
@@ -322,6 +326,126 @@
         "REQ-42"
       ],
       "version": 1
+    },
+    {
+      "id": "feature-add-a-cancel-control-for-a-single-pending-running-image-generation-run-on-the-provider-page-ui-near-the-results-area-the-cancel-action-must-call-the-backend-cancel-api-update-the-ui-state-via-react-query-invalidation-refetch-and-show-an-english-toast-error-message-if-it-is-too-late-to-cancel",
+      "title": "Add a Cancel control for a single pending/running image-generation run on the provider page UI near the results area. The Cancel action must call the backend cancel API, update the UI state via React Query invalidation/refetch, and show an English toast/error message if it is too late to cancel.",
+      "reqIds": [
+        "REQ-45"
+      ],
+      "version": 1
+    },
+    {
+      "id": "feature-add-a-clear-pending-action-for-fal-ai-that-clears-all-pending-running-runs-for-the-current-user-with-buttons-available-1-in-the-fal-ai-workflow-results-area-and-2-in-the-generation-history-area-the-action-must-only-apply-to-fal-ai-and-must-not-impact-other-providers",
+      "title": "Add a \"Clear Pending\" action for Fal.ai that clears all pending/running runs for the current user, with buttons available (1) in the Fal.ai workflow/results area and (2) in the Generation History area. The action must only apply to Fal.ai and must not impact other providers.",
+      "reqIds": [
+        "REQ-46"
+      ],
+      "version": 1
+    },
+    {
+      "id": "feature-add-positive-prompt-and-negative-prompt-inputs-to-the-fal-ai-image-generation-workflow-ui-and-ensure-they-are-incorporated-into-the-effective-prompt-sent-for-fal-ai-generation-in-a-consistent-predictable-way",
+      "title": "Add Positive Prompt and Negative Prompt inputs to the Fal.ai image generation workflow UI, and ensure they are incorporated into the effective prompt sent for Fal.ai generation in a consistent, predictable way.",
+      "reqIds": [
+        "REQ-47"
+      ],
+      "version": 1
+    },
+    {
+      "id": "feature-update-the-provider-registry-config-so-fal-ai-image-generation-declares-the-needed-option-fields-including-positive-prompt-and-negative-prompt-and-the-fal-ai-page-renders-them-through-the-existing-capability-driven-workflow-ui-providertoolsoptionssection-generationhistory",
+      "title": "Update the provider registry/config so Fal.ai image generation declares the needed option fields (including Positive Prompt and Negative Prompt) and the Fal.ai page renders them through the existing capability-driven workflow UI (ProviderToolsOptionsSection + GenerationHistory).",
+      "reqIds": [
+        "REQ-48"
+      ],
+      "version": 1
+    },
+    {
+      "id": "feature-add-pwa-metadata-to-the-app-shell-so-modern-browsers-recognize-the-site-as-installable-including-a-web-app-manifest-link-theme-color-and-platform-icon-links",
+      "title": "Add PWA metadata to the app shell so modern browsers recognize the site as installable, including a web app manifest link, theme-color, and platform icon links.",
+      "reqIds": [
+        "REQ-49"
+      ],
+      "version": 1
+    },
+    {
+      "id": "feature-create-a-valid-web-app-manifest-file-that-defines-the-app-name-short-name-start-url-display-mode-theme-background-colors-and-an-icon-set-including-a-maskable-icon-so-the-app-installs-with-a-proper-home-screen-icon",
+      "title": "Create a valid Web App Manifest file that defines the app name, short name, start URL, display mode, theme/background colors, and an icon set (including a maskable icon) so the app installs with a proper home-screen icon.",
+      "reqIds": [
+        "REQ-50"
+      ],
+      "version": 1
+    },
+    {
+      "id": "feature-add-a-service-worker-that-caches-the-core-app-shell-for-offline-poor-network-resilience-and-register-it-at-runtime-without-modifying-immutable-frontend-files",
+      "title": "Add a service worker that caches the core app shell for offline/poor-network resilience and register it at runtime without modifying immutable frontend files.",
+      "reqIds": [
+        "REQ-51"
+      ],
+      "version": 1
+    },
+    {
+      "id": "feature-implement-an-in-app-install-prompt-ux-that-listens-for-the-beforeinstallprompt-event-and-offers-an-explicit-install-action-when-available-with-a-clear-fallback-message-when-installation-is-not-supported",
+      "title": "Implement an in-app install prompt UX that listens for the `beforeinstallprompt` event and offers an explicit Install action when available, with a clear fallback message when installation is not supported.",
+      "reqIds": [
+        "REQ-52"
+      ],
+      "version": 1
+    },
+    {
+      "id": "feature-add-the-required-pwa-icon-image-assets-as-static-files-under-frontend-public-assets-generated-and-wire-them-into-the-manifest-and-html-icon-links",
+      "title": "Add the required PWA icon image assets as static files under `frontend/public/assets/generated/` and wire them into the manifest and HTML icon links.",
+      "reqIds": [
+        "REQ-53"
+      ],
+      "version": 1
+    },
+    {
+      "id": "feature-add-a-global-footer-that-appears-on-every-page-render-inside-the-app-shell-including-provider-pages-admin-panel-and-unauthenticated-login-and-initializing-screens-displaying-exactly-licensed-and-created-by-seale-s-empire",
+      "title": "Add a global footer that appears on every page render inside the app shell (including provider pages, admin panel, and unauthenticated/login and initializing screens) displaying exactly: \"licensed and created by Seale's Empire\".",
+      "reqIds": [
+        "REQ-54"
+      ],
+      "version": 1
+    },
+    {
+      "id": "feature-create-a-dedicated-terms-conditions-page-using-app-created-placeholder-english-content-and-make-it-accessible-via-navigation-from-anywhere-in-the-app-at-minimum-via-a-footer-link-labeled-terms-conditions",
+      "title": "Create a dedicated Terms & Conditions page using app-created placeholder English content, and make it accessible via navigation from anywhere in the app (at minimum, via a footer link labeled \"Terms & Conditions\").",
+      "reqIds": [
+        "REQ-55"
+      ],
+      "version": 1
+    },
+    {
+      "id": "feature-rename-the-application-to-empire-c-c-everywhere-the-current-app-name-appears-including-browser-tab-title-top-navigation-brand-text-authentication-login-screen-text-that-references-the-app-name-and-pwa-manifest-metadata-name-short-name-description-as-applicable",
+      "title": "Rename the application to \"Empire C.C\" everywhere the current app name appears, including: browser/tab title, top navigation brand text, authentication/login screen text that references the app name, and PWA manifest metadata (name/short_name/description as applicable).",
+      "reqIds": [
+        "REQ-56"
+      ],
+      "version": 1
+    },
+    {
+      "id": "feature-use-the-third-uploaded-image-openai-playground-2026-02-09-at-00-55-58-1-png-as-the-official-empire-c-c-logo-and-generate-a-resized-icon-set-as-static-assets-under-frontend-public-assets-generated-replacing-the-existing-app-icon-images-used-by-the-pwa-and-the-ui",
+      "title": "Use the third uploaded image (\"OpenAI Playground 2026-02-09 at 00.55.58-1.png\") as the official Empire C.C logo and generate a resized icon set as static assets under `frontend/public/assets/generated/`, replacing the existing app icon images used by the PWA and the UI.",
+      "reqIds": [
+        "REQ-57"
+      ],
+      "version": 1
+    },
+    {
+      "id": "feature-update-all-pwa-icon-references-so-the-installed-pwa-uses-the-new-logo-ensure-frontend-public-manifest-webmanifest-icon-entries-and-frontend-index-html-favicon-apple-touch-icon-links-correctly-point-to-the-generated-assets-and-render-the-new-logo-after-a-hard-refresh",
+      "title": "Update all PWA icon references so the installed PWA uses the new logo: ensure `frontend/public/manifest.webmanifest` icon entries and `frontend/index.html` favicon/apple-touch-icon links correctly point to the generated assets and render the new logo after a hard refresh.",
+      "reqIds": [
+        "REQ-58"
+      ],
+      "version": 1
+    },
+    {
+      "id": "feature-replace-all-in-app-ui-branding-logo-placements-with-the-new-logo-asset-derived-from-the-third-uploaded-image-including-the-topnav-logo-image-and-the-unauthenticated-login-experience-so-the-app-visually-uses-the-same-logo-everywhere-branding-is-shown",
+      "title": "Replace all in-app UI branding/logo placements with the new logo asset (derived from the third uploaded image), including the TopNav logo image and the unauthenticated/login experience so the app visually uses the same logo everywhere branding is shown.",
+      "reqIds": [
+        "REQ-59"
+      ],
+      "version": 1
     }
   ],
   "new_feature_requests": [
@@ -410,9 +534,103 @@
         "REQ-36"
       ],
       "status": "pending"
+    },
+    {
+      "id": "AR-19",
+      "summary": "Add cancel control for in-progress/queued image generation runs per provider (current user only): show Cancel next to results area; attempt backend cancel if supported, otherwise allow run to finish and show 'too late to cancel' error",
+      "reqIds": [],
+      "status": "pending"
+    },
+    {
+      "id": "AR-20",
+      "summary": "Improve Links page UX: add form with link description + URL input + Save; saved items drop into their own cards/boxes with copy/send + edit/delete options; original input resets to allow adding more links",
+      "reqIds": [],
+      "status": "pending"
+    },
+    {
+      "id": "AR-21",
+      "summary": "Add password-protected owner/admin API keys (global fallback keys) stored in Admin panel: when a user lacks their own provider key, app uses owner key for that provider and tracks/bills usage to owner; user keys override owner keys",
+      "reqIds": [],
+      "status": "pending"
+    },
+    {
+      "id": "AR-22",
+      "summary": "Add a password-protected Admin/Access panel for app owner to manage promotional codes, owner API keys, referral links, and related administrative settings",
+      "reqIds": [],
+      "status": "pending"
+    },
+    {
+      "id": "AR-23",
+      "summary": "Add per-provider referral link area on each provider page (editable in Admin panel) so users can click to obtain their own key; if user enters their own key, usage switches from owner key billing to user key",
+      "reqIds": [],
+      "status": "pending"
+    },
+    {
+      "id": "AR-24",
+      "summary": "Add an in-app AI assistant/help navigator to guide users to features and explain how to use the app’s AI tools/workflows",
+      "reqIds": [],
+      "status": "pending"
+    },
+    {
+      "id": "AR-25",
+      "summary": "Fal.ai page: add 'Clear Pending' action to clear all queued/running Fal image jobs for the current user (buttons in both workflow area and history area)",
+      "reqIds": [],
+      "status": "pending"
+    },
+    {
+      "id": "AR-26",
+      "summary": "Fal.ai page: add Positive Prompt and Negative Prompt inputs and incorporate them into the prompt sent to Fal generation (implementation details per best UX)",
+      "reqIds": [],
+      "status": "pending"
+    },
+    {
+      "id": "AR-27",
+      "summary": "Add backend support to cancel a single pending/running workflow run for the current authenticated user for a specific provider (used for Fal.ai image generation). If the run is no longer cancelable (already succeeded/failed), the call must fail with an English error message indicating it was too late to cancel and that the generation may already be finished.",
+      "reqIds": [
+        "REQ-43"
+      ],
+      "status": "pending"
+    },
+    {
+      "id": "AR-28",
+      "summary": "Add backend support to clear all pending/running workflow runs for the current authenticated user for a specific provider (Fal.ai). Clearing must only affect the caller’s runs for that provider.",
+      "reqIds": [
+        "REQ-44"
+      ],
+      "status": "pending"
+    },
+    {
+      "id": "AR-29",
+      "summary": "Upgrade the web app to full PWA support: installability with an app icon, manifest + service worker, install prompt, and proper app icons for supported platforms",
+      "reqIds": [],
+      "status": "pending"
+    },
+    {
+      "id": "AR-30",
+      "summary": "Add a global footer on all pages displaying: \"licensed and created by Seale's Empire\" (including provider pages, admin panels, and login/auth screens)",
+      "reqIds": [],
+      "status": "pending"
+    },
+    {
+      "id": "AR-31",
+      "summary": "Add a Terms & Conditions page (app-created placeholder content) and make it accessible in the app navigation (e.g., footer link)",
+      "reqIds": [],
+      "status": "pending"
+    },
+    {
+      "id": "AR-32",
+      "summary": "Rename the app to \"Empire C.C\" everywhere the current name appears (UI headers, browser title, manifest/PWA metadata, and any other branding locations)",
+      "reqIds": [],
+      "status": "pending"
+    },
+    {
+      "id": "AR-33",
+      "summary": "Set the official Empire C.C logo to the user’s 3rd uploaded image; generate resized variants to replace the entire PWA icon set and replace all in-app UI branding/logo placements with this asset",
+      "reqIds": [],
+      "status": "pending"
     }
   ],
-  "projectName": "Replica of Empire Video+ with provider-centric navigation and per-provider command center pages",
+  "projectName": "Empire C.C",
   "clarification_mode": "instant",
   "clarification_rounds": 0
 }

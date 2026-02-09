@@ -94,6 +94,8 @@ export const idlService = IDL.Service({
   'addChatMessage' : IDL.Func([IDL.Text, IDL.Text], [], []),
   'addOrUpdateAPIKey' : IDL.Func([IDL.Text, IDL.Text], [], []),
   'assignCallerUserRole' : IDL.Func([IDL.Principal, UserRole], [], []),
+  'cancelPendingWorkflowRunsForProvider' : IDL.Func([IDL.Text], [], []),
+  'cancelWorkflowRun' : IDL.Func([IDL.Text], [], []),
   'customProviderMetadataExists' : IDL.Func([IDL.Text], [IDL.Bool], ['query']),
   'executeWorkflow' : IDL.Func(
       [IDL.Text, IDL.Text, IDL.Text],
@@ -135,6 +137,7 @@ export const idlService = IDL.Service({
   'initializeProviders' : IDL.Func([IDL.Vec(ProviderInfo)], [], []),
   'isCallerAdmin' : IDL.Func([], [IDL.Bool], ['query']),
   'providerKeyExists' : IDL.Func([IDL.Text], [IDL.Bool], ['query']),
+  'saveCallerUserProfile' : IDL.Func([UserProfile], [], []),
   'setCustomProviderMetadata' : IDL.Func([IDL.Text, IDL.Text], [], []),
   'streamChatMessages' : IDL.Func(
       [IDL.Text, IDL.Nat],
@@ -237,6 +240,8 @@ export const idlFactory = ({ IDL }) => {
     'addChatMessage' : IDL.Func([IDL.Text, IDL.Text], [], []),
     'addOrUpdateAPIKey' : IDL.Func([IDL.Text, IDL.Text], [], []),
     'assignCallerUserRole' : IDL.Func([IDL.Principal, UserRole], [], []),
+    'cancelPendingWorkflowRunsForProvider' : IDL.Func([IDL.Text], [], []),
+    'cancelWorkflowRun' : IDL.Func([IDL.Text], [], []),
     'customProviderMetadataExists' : IDL.Func(
         [IDL.Text],
         [IDL.Bool],
@@ -282,6 +287,7 @@ export const idlFactory = ({ IDL }) => {
     'initializeProviders' : IDL.Func([IDL.Vec(ProviderInfo)], [], []),
     'isCallerAdmin' : IDL.Func([], [IDL.Bool], ['query']),
     'providerKeyExists' : IDL.Func([IDL.Text], [IDL.Bool], ['query']),
+    'saveCallerUserProfile' : IDL.Func([UserProfile], [], []),
     'setCustomProviderMetadata' : IDL.Func([IDL.Text, IDL.Text], [], []),
     'streamChatMessages' : IDL.Func(
         [IDL.Text, IDL.Nat],

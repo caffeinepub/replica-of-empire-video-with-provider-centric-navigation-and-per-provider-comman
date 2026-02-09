@@ -1,181 +1,185 @@
-import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
+import { Card, CardContent } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
-import { Alert, AlertDescription } from '@/components/ui/alert';
-import { Download, Share2, CheckCircle, XCircle, Loader2, Clock } from 'lucide-react';
+import { Badge } from '@/components/ui/badge';
+import { Download, Share2, Loader2, CheckCircle2, XCircle, Clock, X } from 'lucide-react';
 import { toast } from 'sonner';
 import type { WorkflowRun } from '@/backend';
-import { getArtifactDirectURL, downloadArtifact, generateArtifactFilename, getMimeTypeFromFilename } from '@/utils/artifacts';
+import type { WorkflowType } from '@/providers/providers';
 import { shareArtifact } from '@/utils/share';
-import { useState } from 'react';
+import { useCancelWorkflowRun } from '@/hooks/workflows/useCancelWorkflowRun';
 
 interface GenerationResultProps {
   run: WorkflowRun;
-  onReuse?: () => void;
+  provider: string;
+  workflowType: WorkflowType;
 }
 
-export default function GenerationResult({ run, onReuse }: GenerationResultProps) {
-  const [isDownloading, setIsDownloading] = useState(false);
-  const [isSharing, setIsSharing] = useState(false);
+export function GenerationResult({ run, provider, workflowType }: GenerationResultProps) {
+  const cancelRun = useCancelWorkflowRun();
 
-  const isImage = run.workflowType === 'image-generation';
-  const isVideo = run.workflowType === 'video-generation';
-  const isPending = run.status.__kind__ === 'pending';
-  const isRunning = run.status.__kind__ === 'running';
-  const isSuccess = run.status.__kind__ === 'success';
-  const isFailed = run.status.__kind__ === 'failed';
+  const getStatusBadge = () => {
+    switch (run.status.__kind__) {
+      case 'pending':
+        return (
+          <Badge variant="outline" className="gap-1">
+            <Clock className="h-3 w-3" />
+            Pending
+          </Badge>
+        );
+      case 'running':
+        return (
+          <Badge variant="outline" className="gap-1">
+            <Loader2 className="h-3 w-3 animate-spin" />
+            Generating...
+          </Badge>
+        );
+      case 'success':
+        return (
+          <Badge variant="default" className="gap-1 bg-green-600">
+            <CheckCircle2 className="h-3 w-3" />
+            Complete
+          </Badge>
+        );
+      case 'failed':
+        return (
+          <Badge variant="destructive" className="gap-1">
+            <XCircle className="h-3 w-3" />
+            Failed
+          </Badge>
+        );
+    }
+  };
 
   const handleDownload = async () => {
     if (!run.outputBlobId) return;
 
-    setIsDownloading(true);
     try {
-      const extension = isImage ? 'png' : isVideo ? 'mp4' : 'bin';
-      const filename = generateArtifactFilename(run.workflowType, run.provider, extension);
-      const mimeType = getMimeTypeFromFilename(filename);
+      // Create a temporary link to download the image
+      const link = document.createElement('a');
+      link.href = run.outputBlobId;
+      link.download = `${provider}-${workflowType}-${run.id}.png`;
+      document.body.appendChild(link);
+      link.click();
+      document.body.removeChild(link);
       
-      await downloadArtifact(run.outputBlobId, filename, mimeType);
       toast.success('Download started');
-    } catch (error: any) {
-      toast.error(error.message || 'Download failed');
-    } finally {
-      setIsDownloading(false);
+    } catch (error) {
+      console.error('Download failed:', error);
+      toast.error('Failed to download');
     }
   };
 
   const handleShare = async () => {
     if (!run.outputBlobId) return;
 
-    setIsSharing(true);
     try {
-      const url = getArtifactDirectURL(run.outputBlobId);
-      const title = `${run.provider} ${run.workflowType}`;
-      const result = await shareArtifact(url, title);
-      
-      if (result.success) {
-        toast.success(result.message);
-      } else {
-        toast.error(result.message);
-      }
-    } catch (error: any) {
-      toast.error('Share failed');
-    } finally {
-      setIsSharing(false);
+      await shareArtifact(run.outputBlobId, `${provider} ${workflowType}`);
+    } catch (error) {
+      console.error('Share failed:', error);
+      toast.error('Failed to share');
     }
   };
 
+  const handleCancel = async () => {
+    try {
+      await cancelRun.mutateAsync({ runId: run.id, provider });
+      toast.success('Generation cancelled');
+    } catch (error: any) {
+      console.error('Cancel failed:', error);
+      toast.error(error.message || 'Failed to cancel');
+    }
+  };
+
+  const isProcessing = run.status.__kind__ === 'pending' || run.status.__kind__ === 'running';
+  const isComplete = run.status.__kind__ === 'success';
+  const isFailed = run.status.__kind__ === 'failed';
+
   return (
     <Card>
-      <CardHeader>
-        <CardTitle className="flex items-center gap-2 text-lg">
-          {isPending && (
-            <>
-              <Clock className="h-5 w-5 text-muted-foreground" />
-              <span>Pending</span>
-            </>
-          )}
-          {isRunning && (
-            <>
-              <Loader2 className="h-5 w-5 animate-spin text-primary" />
-              <span>Generating...</span>
-            </>
-          )}
-          {isSuccess && (
-            <>
-              <CheckCircle className="h-5 w-5 text-green-500" />
-              <span>Generation Complete</span>
-            </>
-          )}
-          {isFailed && (
-            <>
-              <XCircle className="h-5 w-5 text-destructive" />
-              <span>Generation Failed</span>
-            </>
-          )}
-        </CardTitle>
-      </CardHeader>
-      <CardContent className="space-y-4">
-        {/* Status message */}
-        {isRunning && (
-          <Alert>
-            <AlertDescription>
-              Your {run.workflowType.replace('-', ' ')} is being generated. This may take a moment...
-            </AlertDescription>
-          </Alert>
-        )}
-
-        {isFailed && (
-          <Alert variant="destructive">
-            <AlertDescription>
-              {run.status.__kind__ === 'failed' ? run.status.failed : 'An error occurred during generation.'}
-            </AlertDescription>
-          </Alert>
-        )}
-
-        {/* Preview */}
-        {isSuccess && run.outputBlobId && (
-          <div className="space-y-4">
-            {isImage && (
-              <div className="rounded-lg overflow-hidden border bg-muted">
-                <img
-                  src={getArtifactDirectURL(run.outputBlobId)}
-                  alt="Generated image"
-                  className="w-full h-auto"
-                />
-              </div>
+      <CardContent className="p-4 space-y-4">
+        <div className="flex items-center justify-between">
+          <div className="flex items-center gap-2">
+            {getStatusBadge()}
+            {run.durationNanos && (
+              <span className="text-sm text-muted-foreground">
+                {(Number(run.durationNanos) / 1_000_000_000).toFixed(1)}s
+              </span>
             )}
+          </div>
+          {isProcessing && (
+            <Button
+              variant="ghost"
+              size="sm"
+              onClick={handleCancel}
+              disabled={cancelRun.isPending}
+            >
+              <X className="h-4 w-4" />
+            </Button>
+          )}
+        </div>
 
-            {isVideo && (
-              <div className="rounded-lg overflow-hidden border bg-muted">
+        {/* Show inputs */}
+        {run.inputs && (
+          <div className="text-sm space-y-1">
+            <p className="font-medium text-muted-foreground">Prompt:</p>
+            <p className="text-foreground line-clamp-3">
+              {(() => {
+                try {
+                  const inputs = JSON.parse(run.inputs);
+                  return inputs.prompt || inputs.script || 'No prompt provided';
+                } catch {
+                  return run.inputs;
+                }
+              })()}
+            </p>
+          </div>
+        )}
+
+        {/* Show preview for completed generations */}
+        {isComplete && run.outputBlobId && (
+          <div className="space-y-3">
+            <div className="relative aspect-square w-full overflow-hidden rounded-lg border bg-muted">
+              {workflowType === 'video-generation' ? (
                 <video
-                  src={getArtifactDirectURL(run.outputBlobId)}
+                  src={run.outputBlobId}
                   controls
-                  className="w-full h-auto"
-                >
-                  Your browser does not support the video tag.
-                </video>
-              </div>
-            )}
-
-            {/* Actions */}
-            <div className="flex flex-wrap gap-2">
-              <Button
-                onClick={handleDownload}
-                disabled={isDownloading}
-                variant="default"
-              >
-                <Download className="mr-2 h-4 w-4" />
-                {isDownloading ? 'Downloading...' : 'Download'}
-              </Button>
-
-              <Button
-                onClick={handleShare}
-                disabled={isSharing}
-                variant="outline"
-              >
-                <Share2 className="mr-2 h-4 w-4" />
-                {isSharing ? 'Sharing...' : 'Share'}
-              </Button>
-
-              {onReuse && (
-                <Button
-                  onClick={onReuse}
-                  variant="outline"
-                >
-                  Reuse Parameters
-                </Button>
+                  className="h-full w-full object-contain"
+                />
+              ) : (
+                <img
+                  src={run.outputBlobId}
+                  alt="Generated content"
+                  className="h-full w-full object-contain"
+                />
               )}
+            </div>
+
+            <div className="flex gap-2">
+              <Button variant="outline" size="sm" onClick={handleDownload} className="flex-1">
+                <Download className="mr-2 h-4 w-4" />
+                Download
+              </Button>
+              <Button variant="outline" size="sm" onClick={handleShare} className="flex-1">
+                <Share2 className="mr-2 h-4 w-4" />
+                Share
+              </Button>
             </div>
           </div>
         )}
 
-        {/* Metadata */}
-        <div className="text-sm text-muted-foreground space-y-1">
-          <p>Run ID: {run.id}</p>
-          <p>Created: {new Date(Number(run.timestamp) / 1000000).toLocaleString()}</p>
-          {run.durationNanos && (
-            <p>Duration: {(Number(run.durationNanos) / 1000000000).toFixed(2)}s</p>
-          )}
-        </div>
+        {/* Show error message for failed generations */}
+        {isFailed && run.status.__kind__ === 'failed' && (
+          <div className="text-sm text-destructive">
+            {run.status.failed}
+          </div>
+        )}
+
+        {/* Show loading state */}
+        {isProcessing && (
+          <div className="flex items-center justify-center py-8">
+            <Loader2 className="h-8 w-8 animate-spin text-muted-foreground" />
+          </div>
+        )}
       </CardContent>
     </Card>
   );

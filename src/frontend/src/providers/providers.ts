@@ -256,7 +256,9 @@ export const PROVIDERS: ProviderConfig[] = [
     workflowType: 'image-generation',
     optionFields: [
       { id: 'model', label: 'Model', type: 'select', options: ['fal-ai/flux-pro', 'fal-ai/flux-dev', 'fal-ai/flux-schnell'], defaultValue: 'fal-ai/flux-pro' },
-      { id: 'prompt', label: 'Prompt', type: 'textarea', placeholder: 'Your prompt...' },
+      { id: 'prompt', label: 'Prompt', type: 'textarea', placeholder: 'Your main prompt...' },
+      { id: 'positivePrompt', label: 'Positive prompt', type: 'textarea', placeholder: 'Elements to emphasize...' },
+      { id: 'negativePrompt', label: 'Negative prompt', type: 'textarea', placeholder: 'Elements to avoid...' },
     ],
     recommendedPrompts: [
       'High-resolution architectural rendering of a modern building',

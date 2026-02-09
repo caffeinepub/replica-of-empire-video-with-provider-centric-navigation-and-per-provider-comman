@@ -1,4 +1,4 @@
-import { RouterProvider, createRouter, createRoute, createRootRoute, Navigate } from '@tanstack/react-router';
+import { RouterProvider, createRouter, createRoute, createRootRoute, Navigate, useParams } from '@tanstack/react-router';
 import { ThemeProvider } from 'next-themes';
 import AppShell from './components/layout/AppShell';
 import ProviderHubPage from './pages/ProviderHubPage';
@@ -14,6 +14,7 @@ import StudioToolsPage from './pages/StudioToolsPage';
 import MemoryBrainPage from './pages/MemoryBrainPage';
 import LinksDashboardPage from './pages/LinksDashboardPage';
 import AdminPanelPage from './pages/AdminPanelPage';
+import TermsPage from './pages/TermsPage';
 import AuthGate from './components/auth/AuthGate';
 import { Toaster } from '@/components/ui/sonner';
 
@@ -86,7 +87,7 @@ const customSlot1Route = createRoute({
   path: '/providers/custom-slot-1',
   component: () => (
     <AuthGate>
-      <CustomSlotProviderPage />
+      <CustomSlotProviderPage providerId="custom-slot-1" />
     </AuthGate>
   ),
 });
@@ -96,7 +97,7 @@ const customSlot2Route = createRoute({
   path: '/providers/custom-slot-2',
   component: () => (
     <AuthGate>
-      <CustomSlotProviderPage />
+      <CustomSlotProviderPage providerId="custom-slot-2" />
     </AuthGate>
   ),
 });
@@ -121,14 +122,19 @@ const falAliasRoute = createRoute({
   ),
 });
 
+function GenericProviderRouteComponent() {
+  const { providerId } = useParams({ from: '/providers/$providerId' });
+  return (
+    <AuthGate>
+      <GenericProviderPage providerId={providerId} />
+    </AuthGate>
+  );
+}
+
 const genericProviderRoute = createRoute({
   getParentRoute: () => rootRoute,
   path: '/providers/$providerId',
-  component: () => (
-    <AuthGate>
-      <GenericProviderPage />
-    </AuthGate>
-  ),
+  component: GenericProviderRouteComponent,
 });
 
 const keyVaultRoute = createRoute({
@@ -181,6 +187,12 @@ const adminRoute = createRoute({
   ),
 });
 
+const termsRoute = createRoute({
+  getParentRoute: () => rootRoute,
+  path: '/terms',
+  component: TermsPage,
+});
+
 const routeTree = rootRoute.addChildren([
   indexRoute,
   openaiRoute,
@@ -198,6 +210,7 @@ const routeTree = rootRoute.addChildren([
   memoryRoute,
   linksRoute,
   adminRoute,
+  termsRoute,
 ]);
 
 const router = createRouter({ routeTree });

@@ -3,6 +3,7 @@ import { Key, Wrench, Brain, Link as LinkIcon, Shield, Menu as MenuIcon } from '
 import { Button } from '@/components/ui/button';
 import LoginButton from '../auth/LoginButton';
 import MobileTopNavMenu from './MobileTopNavMenu';
+import PwaInstallPrompt from '../pwa/PwaInstallPrompt';
 
 interface TopNavProps {
   onMobileProviderNavToggle: () => void;
@@ -24,8 +25,12 @@ export default function TopNav({ onMobileProviderNavToggle }: TopNavProps) {
           </Button>
 
           <Link to="/" className="flex items-center gap-2 sm:gap-3">
-            <img src="/assets/generated/app-logo.dim_512x512.png" alt="Logo" className="h-8 w-8 sm:h-10 sm:w-10" />
-            <span className="text-base font-bold tracking-tight sm:text-xl">Empire Command</span>
+            <img 
+              src="/assets/generated/app-logo.dim_512x512.png" 
+              alt="Empire C.C Logo" 
+              className="h-8 w-8 sm:h-10 sm:w-10 object-contain" 
+            />
+            <span className="text-base font-bold tracking-tight sm:text-xl">Empire C.C</span>
           </Link>
 
           {/* Desktop navigation - hidden on mobile */}
@@ -64,6 +69,9 @@ export default function TopNav({ onMobileProviderNavToggle }: TopNavProps) {
         </div>
 
         <div className="flex items-center gap-2">
+          {/* PWA Install Prompt */}
+          <PwaInstallPrompt />
+          
           {/* Mobile top nav menu */}
           <MobileTopNavMenu />
           <LoginButton />

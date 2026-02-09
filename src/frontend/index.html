@@ -1,11 +1,37 @@
+<!DOCTYPE html>
 <html lang='en'>
     <head>
         <meta charset='UTF-8' />
         <meta name='viewport' content='width=device-width, initial-scale=1.0' />
-        <title>Replica of Empire Video+ with provider-centric navigation and per-provider command center pages</title>
+        <meta name='theme-color' content='#0a0a0a' />
+        <title>Empire C.C - AI Provider Command Center</title>
+        
+        <!-- PWA Manifest -->
+        <link rel='manifest' href='/manifest.webmanifest' />
+        
+        <!-- Favicon -->
+        <link rel='icon' type='image/png' sizes='32x32' href='/assets/generated/favicon.dim_32x32.png' />
+        
+        <!-- Apple Touch Icon -->
+        <link rel='apple-touch-icon' sizes='180x180' href='/assets/generated/apple-touch-icon.dim_180x180.png' />
     </head>
     <body>
         <div id='root'></div>
         <script type='module' src='/src/main.tsx'></script>
+        
+        <!-- Service Worker Registration -->
+        <script type='module'>
+          if ('serviceWorker' in navigator) {
+            window.addEventListener('load', () => {
+              navigator.serviceWorker.register('/sw.js')
+                .then(registration => {
+                  console.log('SW registered:', registration);
+                })
+                .catch(error => {
+                  console.log('SW registration failed:', error);
+                });
+            });
+          }
+        </script>
     </body>
 </html>

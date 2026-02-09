@@ -4,6 +4,7 @@ import TopNav from './TopNav';
 import ProviderNav from '../providers/ProviderNav';
 import MobileProviderNav from './MobileProviderNav';
 import ProfileSetupModal from '../auth/ProfileSetupModal';
+import AppFooter from './AppFooter';
 
 export default function AppShell() {
   const [mobileProviderNavOpen, setMobileProviderNavOpen] = useState(false);
@@ -30,6 +31,7 @@ export default function AppShell() {
         <main className="flex-1 overflow-y-auto">
           <Outlet />
         </main>
+        <AppFooter />
       </div>
       <ProfileSetupModal />
     </div>

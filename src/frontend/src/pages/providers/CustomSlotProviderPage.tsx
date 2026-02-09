@@ -1,61 +1,58 @@
 import { useState } from 'react';
 import { getProviderById } from '@/providers/providers';
 import ProviderKeyManager from '@/components/keys/ProviderKeyManager';
-import ChatbotCommandCenter from '@/components/chat/ChatbotCommandCenter';
 import ProviderActionGuard from '@/components/providers/ProviderActionGuard';
 import RecommendedPrompts from '@/components/providers/RecommendedPrompts';
-import ProviderToolsOptionsSection from '@/components/providers/ProviderToolsOptionsSection';
-import { useCustomProviderMetadata, useSaveCustomProviderMetadata } from '@/hooks/providers/useCustomProviderMetadata';
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
+import { ProviderToolsOptionsSection } from '@/components/providers/ProviderToolsOptionsSection';
+import { useResolvedProviderDisplayName } from '@/hooks/providers/useResolvedProviderDisplayName';
+import { useSaveCustomProviderMetadata } from '@/hooks/providers/useCustomProviderMetadata';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
-import { Badge } from '@/components/ui/badge';
-import { useParams } from '@tanstack/react-router';
+import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
+import { Pencil, Check, X } from 'lucide-react';
 import { toast } from 'sonner';
-import { Settings, Check } from 'lucide-react';
 
-export default function CustomSlotProviderPage() {
-  const { providerId } = useParams({ strict: false }) as { providerId: string };
-  const provider = getProviderById(providerId);
-  const { data: metadata, isLoading } = useCustomProviderMetadata(providerId);
-  const { mutate: saveMetadata, isPending } = useSaveCustomProviderMetadata();
-  const [displayName, setDisplayName] = useState('');
-  const [isEditing, setIsEditing] = useState(false);
+interface CustomSlotProviderPageProps {
+  providerId: string;
+}
+
+export default function CustomSlotProviderPage({ providerId }: CustomSlotProviderPageProps) {
+  const provider = getProviderById(providerId)!;
+  const Icon = provider.icon;
+  const displayName = useResolvedProviderDisplayName(providerId);
+  const saveMetadata = useSaveCustomProviderMetadata();
+  
+  const [isEditingName, setIsEditingName] = useState(false);
+  const [editedName, setEditedName] = useState('');
   const [draftMessage, setDraftMessage] = useState('');
 
-  if (!provider) {
-    return (
-      <div className="container mx-auto space-y-6 px-4 py-6 sm:px-6">
-        <div className="text-center">
-          <h1 className="text-2xl font-bold">Provider Not Found</h1>
-          <p className="text-muted-foreground">The requested provider does not exist.</p>
-        </div>
-      </div>
-    );
-  }
+  const handleStartEdit = () => {
+    setEditedName(displayName);
+    setIsEditingName(true);
+  };
 
-  const Icon = provider.icon;
-  const currentDisplayName = metadata?.displayName || provider.displayName;
-
-  const handleSaveDisplayName = () => {
-    if (displayName.trim().length < 2) {
-      toast.error('Display name must be at least 2 characters long');
+  const handleSaveName = async () => {
+    if (!editedName.trim()) {
+      toast.error('Display name cannot be empty');
       return;
     }
-    saveMetadata(
-      { providerKey: providerId, displayName: displayName.trim() },
-      {
-        onSuccess: () => {
-          toast.success('Display name saved successfully');
-          setDisplayName('');
-          setIsEditing(false);
-        },
-        onError: (error: any) => {
-          toast.error(error.message || 'Failed to save display name');
-        },
-      }
-    );
+
+    try {
+      await saveMetadata.mutateAsync({
+        providerKey: providerId,
+        displayName: editedName.trim(),
+      });
+      toast.success('Display name updated');
+      setIsEditingName(false);
+    } catch (error: any) {
+      toast.error(error.message || 'Failed to update display name');
+    }
+  };
+
+  const handleCancelEdit = () => {
+    setIsEditingName(false);
+    setEditedName('');
   };
 
   const handleSelectPrompt = (prompt: string) => {
@@ -68,121 +65,48 @@ export default function CustomSlotProviderPage() {
         <div className="flex h-12 w-12 items-center justify-center rounded-lg bg-primary/10 sm:h-16 sm:w-16">
           <Icon className="h-6 w-6 text-primary sm:h-8 sm:w-8" />
         </div>
-        <div>
-          <h1 className="text-2xl font-bold sm:text-3xl">{currentDisplayName}</h1>
+        <div className="flex-1">
+          {isEditingName ? (
+            <div className="flex items-center gap-2">
+              <Input
+                value={editedName}
+                onChange={(e) => setEditedName(e.target.value)}
+                placeholder="Enter display name"
+                className="max-w-xs"
+              />
+              <Button size="sm" onClick={handleSaveName} disabled={saveMetadata.isPending}>
+                <Check className="h-4 w-4" />
+              </Button>
+              <Button size="sm" variant="ghost" onClick={handleCancelEdit}>
+                <X className="h-4 w-4" />
+              </Button>
+            </div>
+          ) : (
+            <div className="flex items-center gap-2">
+              <h1 className="text-2xl font-bold sm:text-3xl">{displayName}</h1>
+              <Button size="sm" variant="ghost" onClick={handleStartEdit}>
+                <Pencil className="h-4 w-4" />
+              </Button>
+            </div>
+          )}
           <p className="text-sm text-muted-foreground sm:text-base">{provider.description}</p>
         </div>
       </div>
 
-      <Card>
-        <CardHeader>
-          <CardTitle className="flex items-center gap-2">
-            <Settings className="h-5 w-5" />
-            Display Name
-          </CardTitle>
-          <CardDescription>
-            {metadata?.displayName
-              ? 'Your custom display name is set. You can update it below.'
-              : 'Set a custom display name for this provider slot.'}
-          </CardDescription>
-        </CardHeader>
-        <CardContent className="space-y-4">
-          {metadata?.displayName && !isEditing ? (
-            <div className="space-y-3">
-              <div className="flex items-center gap-2 rounded-lg border border-border bg-muted/50 p-3">
-                <Check className="h-4 w-4 text-green-600" />
-                <span className="font-medium">{metadata.displayName}</span>
-              </div>
-              <Button variant="outline" size="sm" onClick={() => setIsEditing(true)} className="w-full sm:w-auto">
-                Update Display Name
-              </Button>
-            </div>
-          ) : (
-            <div className="space-y-3">
-              <div className="space-y-2">
-                <Label htmlFor="displayName">Display Name</Label>
-                <Input
-                  id="displayName"
-                  type="text"
-                  placeholder="Enter a custom name for this provider"
-                  value={displayName}
-                  onChange={(e) => setDisplayName(e.target.value)}
-                  disabled={isPending || isLoading}
-                />
-              </div>
-              <div className="flex flex-col gap-2 sm:flex-row">
-                <Button 
-                  onClick={handleSaveDisplayName} 
-                  disabled={isPending || !displayName.trim() || isLoading} 
-                  className="w-full sm:w-auto"
-                >
-                  {isPending ? 'Saving...' : 'Save Display Name'}
-                </Button>
-                {isEditing && (
-                  <Button
-                    variant="outline"
-                    onClick={() => {
-                      setIsEditing(false);
-                      setDisplayName('');
-                    }}
-                    disabled={isPending}
-                    className="w-full sm:w-auto"
-                  >
-                    Cancel
-                  </Button>
-                )}
-              </div>
-            </div>
-          )}
-        </CardContent>
-      </Card>
+      <ProviderKeyManager providerId={provider.id} providerName={displayName} />
 
-      <Card>
-        <CardHeader>
-          <CardTitle>Capabilities</CardTitle>
-          <CardDescription>What this provider slot can do</CardDescription>
-        </CardHeader>
-        <CardContent>
-          <div className="flex flex-wrap gap-2">
-            {provider.capabilities.map((cap) => (
-              <Badge key={cap} variant="secondary">
-                {cap}
-              </Badge>
-            ))}
-          </div>
-        </CardContent>
-      </Card>
-
-      <ProviderKeyManager 
-        providerId={provider.id} 
-        providerName={currentDisplayName}
-      />
-
-      <ProviderActionGuard providerId={provider.id} providerName={currentDisplayName}>
-        <div className="space-y-6">
-          {provider.recommendedPrompts && provider.recommendedPrompts.length > 0 && (
-            <RecommendedPrompts
-              prompts={provider.recommendedPrompts}
-              onSelectPrompt={handleSelectPrompt}
-            />
-          )}
-
-          <ChatbotCommandCenter 
-            providerId={provider.id} 
-            providerName={currentDisplayName}
-            draftMessage={draftMessage}
-            onDraftChange={setDraftMessage}
+      <ProviderActionGuard providerId={provider.id} providerName={displayName}>
+        {provider.recommendedPrompts && provider.recommendedPrompts.length > 0 && (
+          <RecommendedPrompts
+            prompts={provider.recommendedPrompts}
+            onSelectPrompt={handleSelectPrompt}
           />
-
-          {provider.workflowType && provider.workflowType !== 'chat' && (
-            <ProviderToolsOptionsSection
-              providerId={provider.id}
-              providerName={currentDisplayName}
-              workflowType={provider.workflowType}
-              optionFields={provider.optionFields}
-            />
-          )}
-        </div>
+        )}
+        <ProviderToolsOptionsSection
+          provider={provider.id}
+          workflowType={provider.workflowType}
+          optionFields={provider.optionFields}
+        />
       </ProviderActionGuard>
     </div>
   );
