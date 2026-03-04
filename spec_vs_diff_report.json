@@ -1,0 +1,66 @@
+{
+  "kind": "spec_vs_diff_report",
+  "version": "1.0",
+  "generatedAt": "2026-02-17T06:24:53.574Z",
+  "summary": "Diff adds frontend rendering for ZIP URLs in chat (showing a Download ZIP button) and adds a public-facing README at frontend/public/export/README.md plus a Links Dashboard card linking to it. However, there is no evidence of any ZIP generation/packaging pipeline or a produced ZIP containing the full codebase, and the README appears not to be included inside a generated ZIP (it is added as a static public file instead). Several changes (backend link CRUD, Links Dashboard “Export Documentation” UI) appear unrelated to the requested ZIP export regeneration.",
+  "missing_requirements": [
+    {
+      "id": "REQ-1",
+      "requirement": "Generate a new downloadable ZIP archive containing the exact current deployed Empire C.C codebase (frontend + backend + all project configuration files required to build and deploy the same app), and present a fresh download link/button to the user in the chat.",
+      "reason": "The diff shows only client-side detection/rendering of a .zip URL and does not show any implementation that actually generates/builds a ZIP archive or serves it. No backend endpoint, build script, or packaging logic is evidenced, nor inclusion of required project root configuration files into a ZIP.",
+      "evidence": [
+        "frontend/src/components/chat/ChatMessageContent.tsx",
+        "frontend/src/components/chat/ChatbotCommandCenter.tsx"
+      ]
+    },
+    {
+      "id": "REQ-1",
+      "requirement": "ZIP contents match the current deployed version (including recently-added files like PWA assets and generated icons).",
+      "reason": "No ZIP creation logic or file selection list is shown; therefore there is no evidence that the archive includes frontend/, backend/, root configs, PWA assets, or generated icons.",
+      "evidence": [
+        "frontend/src/components/chat/ChatMessageContent.tsx"
+      ]
+    },
+    {
+      "id": "REQ-2",
+      "requirement": "Include a README.md inside the generated ZIP that documents install, local run, canister deployment with dfx, and how to configure provider keys via the existing in-app Key Vault flow.",
+      "reason": "A README is added as a static public file (frontend/public/export/README.md), not shown as being packaged into any generated ZIP. The README content is also truncated in the diff and does not evidence the required dfx deployment steps or Key Vault flow explanation.",
+      "evidence": [
+        "frontend/public/export/README.md"
+      ]
+    }
+  ],
+  "hallucinated_features": [
+    {
+      "description": "Static “Export Documentation” UI card added to Links Dashboard linking to /export/README.md.",
+      "reason": "BuildRequest asks for a downloadable ZIP export and README inside that ZIP, not a new Links Dashboard feature or an in-app documentation link.",
+      "evidence": [
+        "frontend/src/pages/LinksDashboardPage.tsx"
+      ]
+    },
+    {
+      "description": "Backend link CRUD/authorization logic changes unrelated to ZIP export generation.",
+      "reason": "BuildRequest scope is ZIP export regeneration and README inclusion; link management backend changes are not requested.",
+      "evidence": [
+        "backend/main.mo"
+      ]
+    },
+    {
+      "description": "General chat message URL parsing and rendering of non-ZIP external links with icons.",
+      "reason": "Requirement only calls for presenting a fresh ZIP download link/button; broader URL parsing/rendering is beyond what was requested.",
+      "evidence": [
+        "frontend/src/components/chat/ChatMessageContent.tsx"
+      ]
+    }
+  ],
+  "confidence": 0.74,
+  "changed_files": [
+    "backend/main.mo",
+    "frontend-file-summaries.txt",
+    "frontend/public/export/README.md",
+    "frontend/src/components/chat/ChatMessageContent.tsx",
+    "frontend/src/components/chat/ChatbotCommandCenter.tsx",
+    "frontend/src/pages/LinksDashboardPage.tsx",
+    "project_state.json"
+  ]
+}

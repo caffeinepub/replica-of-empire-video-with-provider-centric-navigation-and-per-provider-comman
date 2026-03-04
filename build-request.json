@@ -1,0 +1,58 @@
+{
+  "kind": "build_request",
+  "title": "Regenerate downloadable codebase ZIP export",
+  "projectName": "Empire C.C",
+  "priority": "normal",
+  "requirements": [
+    {
+      "id": "REQ-1",
+      "text": "Generate a new downloadable ZIP archive containing the exact current deployed Empire C.C codebase (frontend + backend + all project configuration files required to build and deploy the same app), and present a fresh download link/button to the user in the chat.",
+      "target": "unknown",
+      "source": {
+        "messageIds": [
+          "recent-messages"
+        ],
+        "quotes": [
+          "User message: \"Generate the ZIP again\"",
+          "User: Resend link",
+          "User: Generate the ZIP again"
+        ]
+      },
+      "acceptanceCriteria": [
+        "A single ZIP archive is produced containing frontend/, backend/, and all required root-level project configuration files (e.g., dfx.json, package manifests, build config) needed to build and deploy the same app.",
+        "A downloadable link/button is displayed to the user after generation, and clicking it downloads the ZIP successfully.",
+        "The ZIP contents match the current deployed version of the app (no missing recently-added files such as PWA assets and generated icons)."
+      ]
+    },
+    {
+      "id": "REQ-2",
+      "text": "Include a README (in English) inside the generated ZIP that documents: how to install dependencies, how to run the app locally, how to deploy the canister(s), and where/how to configure provider keys using the app’s existing key vault flow.",
+      "target": "unknown",
+      "source": {
+        "messageIds": [
+          "project_state.json"
+        ],
+        "quotes": [
+          "Include a README (English) in the ZIP that documents how to install dependencies, run locally, and deploy the canister(s), plus where to configure environment/provider keys (if applicable) using the app’s existing key vault flow."
+        ]
+      },
+      "acceptanceCriteria": [
+        "The ZIP includes a top-level README.md written in English.",
+        "README.md includes step-by-step commands for installing dependencies and running the frontend locally.",
+        "README.md includes step-by-step commands for deploying the canister(s) with dfx.",
+        "README.md explains how users add/manage provider API keys via the existing in-app Key Vault UI flow (no external secret manager required)."
+      ]
+    }
+  ],
+  "constraints": [
+    "Do not modify any files under frontend/src/components/ui or any frontend paths listed as immutable in SYSTEM_CONTEXT."
+  ],
+  "nonGoals": [
+    "Adding new product features unrelated to codebase ZIP export.",
+    "Changing application UI/UX or backend behavior beyond what is necessary to produce the ZIP and README."
+  ],
+  "imageRequirements": {
+    "required": [],
+    "edits": []
+  }
+}

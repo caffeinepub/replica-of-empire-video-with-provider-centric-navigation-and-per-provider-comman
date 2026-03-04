@@ -1,0 +1,588 @@
+import Map "mo:core/Map";
+import Array "mo:core/Array";
+import List "mo:core/List";
+import Text "mo:core/Text";
+import Time "mo:core/Time";
+import Iter "mo:core/Iter";
+import Order "mo:core/Order";
+import Runtime "mo:core/Runtime";
+import Principal "mo:core/Principal";
+import MixinStorage "blob-storage/Mixin";
+import MixinAuthorization "authorization/MixinAuthorization";
+import AccessControl "authorization/access-control";
+
+actor {
+  // Key Management Types
+  public type APIKey = {
+    provider : Text;
+    key : Text;
+    createdAt : Time.Time;
+    updatedAt : Time.Time;
+  };
+
+  module APIKey {
+    public func compare(key1 : APIKey, key2 : APIKey) : Order.Order {
+      Text.compare(key1.provider, key2.provider);
+    };
+  };
+
+  type CustomProviderMetadata = {
+    displayName : Text;
+  };
+
+  // Basic authorization mixin
+  let accessControlState = AccessControl.initState();
+  include MixinAuthorization(accessControlState);
+
+  // User Profile Management
+  public type UserProfile = {
+    name : Text;
+  };
+
+  // Provider Management
+  public type ProviderInfo = {
+    name : Text;
+    apiEndpoint : Text;
+    documentationLink : Text;
+    version : Text;
+    author : Text;
+  };
+
+  let userProfiles = Map.empty<Principal, UserProfile>();
+  let providers = Map.empty<Text, ProviderInfo>();
+  let customProviderMetadata = Map.empty<Principal, Map.Map<Text, CustomProviderMetadata>>();
+
+  // Link Management
+  public type Link = {
+    description : Text;
+    url : Text;
+  };
+
+  let userLinks = Map.empty<Principal, List.List<Link>>();
+
+  // Link CRUD Operations
+  public shared ({ caller }) func addLink(link : Link) : async () {
+    if (not (AccessControl.hasPermission(accessControlState, caller, #user))) {
+      Runtime.trap("Unauthorized: Only users can add links");
+    };
+
+    let links = switch (userLinks.get(caller)) {
+      case (?existingLinks) { existingLinks };
+      case (null) {
+        let newList = List.empty<Link>();
+        userLinks.add(caller, newList);
+        newList;
+      };
+    };
+
+    links.add(link);
+  };
+
+  public shared ({ caller }) func updateLink(index : Nat, newLink : Link) : async () {
+    if (not (AccessControl.hasPermission(accessControlState, caller, #user))) {
+      Runtime.trap("Unauthorized: Only users can update links");
+    };
+
+    switch (userLinks.get(caller)) {
+      case (?links) {
+        if (index >= links.size()) {
+          Runtime.trap("Link could not be updated. Some was this is probably impossible.");
+        };
+        let updatedLinks = links.enumerate().map(
+          func((i, entry)) {
+            if (i == index) { newLink } else { entry };
+          }
+        );
+        userLinks.add(caller, List.fromArray<Link>(updatedLinks.toArray()));
+      };
+      case (null) {
+        Runtime.trap("Link could not be updated. Some was this is probably impossible.");
+      };
+    };
+  };
+
+  public shared ({ caller }) func deleteLink(index : Nat) : async () {
+    if (not (AccessControl.hasPermission(accessControlState, caller, #user))) {
+      Runtime.trap("Unauthorized: Only users can delete links");
+    };
+
+    switch (userLinks.get(caller)) {
+      case (?links) {
+        if (index >= links.size()) {
+          Runtime.trap("Link could not be deleted. Some was this is probably impossible.");
+        };
+        let filteredLinks = links.enumerate().filter(
+          func((i, _)) { i != index }
+        );
+        let mappedLinks = filteredLinks.map(
+          func((_, link)) { link }
+        );
+        userLinks.add(caller, List.fromArray<Link>(mappedLinks.toArray()));
+      };
+      case (null) {
+        Runtime.trap("Link could not be deleted. Some was this is probably impossible.");
+      };
+    };
+  };
+
+  public query ({ caller }) func getAllLinks() : async [Link] {
+    if (not (AccessControl.hasPermission(accessControlState, caller, #user))) {
+      Runtime.trap("Unauthorized: Only users can get links");
+    };
+
+    switch (userLinks.get(caller)) {
+      case (?links) { links.toArray() };
+      case (null) { [] };
+    };
+  };
+
+  // Initialize Providers
+  public shared ({ caller }) func initializeProviders(providerList : [ProviderInfo]) : async () {
+    if (not (AccessControl.hasPermission(accessControlState, caller, #admin))) {
+      Runtime.trap("Only admins can initialize providers.");
+    };
+    for (provider in providerList.values()) {
+      providers.add(provider.name, provider);
+    };
+  };
+
+  public query ({ caller }) func getAllProviders() : async [ProviderInfo] {
+    providers.values().toArray();
+  };
+
+  public query ({ caller }) func getProviderInfo(provider : Text) : async ProviderInfo {
+    switch (providers.get(provider)) {
+      case (null) { Runtime.trap("Provider does not exist") };
+      case (?info) { info };
+    };
+  };
+
+  // User profile management
+  public query ({ caller }) func getCallerUserProfile() : async ?UserProfile {
+    if (not (AccessControl.hasPermission(accessControlState, caller, #user))) {
+      Runtime.trap("Unauthorized: Only users can access profiles");
+    };
+    userProfiles.get(caller);
+  };
+
+  public query ({ caller }) func getUserProfile(user : Principal) : async ?UserProfile {
+    if (caller != user and not AccessControl.isAdmin(accessControlState, caller)) {
+      Runtime.trap("Unauthorized: Can only view your own profile");
+    };
+    userProfiles.get(user);
+  };
+
+  public shared ({ caller }) func saveCallerUserProfile(profile : UserProfile) : async () {
+    if (not (AccessControl.hasPermission(accessControlState, caller, #user))) {
+      Runtime.trap("Unauthorized: Only users can save profiles");
+    };
+    userProfiles.add(caller, profile);
+  };
+
+  // Custom Provider Management per User
+  public shared ({ caller }) func setCustomProviderMetadata(providerKey : Text, displayName : Text) : async () {
+    if (not (AccessControl.hasPermission(accessControlState, caller, #user))) {
+      Runtime.trap("Unauthorized: Only users can manage custom providers");
+    };
+
+    let metadata : CustomProviderMetadata = {
+      displayName;
+    };
+
+    // Get or create user's metadata map
+    let userMetadata = switch (customProviderMetadata.get(caller)) {
+      case (?metadata) { metadata };
+      case null {
+        let newMap = Map.empty<Text, CustomProviderMetadata>();
+        customProviderMetadata.add(caller, newMap);
+        newMap;
+      };
+    };
+    userMetadata.add(providerKey, metadata);
+  };
+
+  public query ({ caller }) func getCustomProviderMetadata(providerKey : Text) : async ?CustomProviderMetadata {
+    if (not (AccessControl.hasPermission(accessControlState, caller, #user))) {
+      Runtime.trap("Unauthorized: Only users can access custom provider metadata");
+    };
+
+    switch (customProviderMetadata.get(caller)) {
+      case (?userMetadata) { userMetadata.get(providerKey) };
+      case null { null };
+    };
+  };
+
+  public query ({ caller }) func customProviderMetadataExists(providerKey : Text) : async Bool {
+    if (not (AccessControl.hasPermission(accessControlState, caller, #user))) {
+      Runtime.trap("Unauthorized: Only users can check custom provider metadata");
+    };
+
+    switch (customProviderMetadata.get(caller)) {
+      case (?userMetadata) { userMetadata.containsKey(providerKey) };
+      case null { false };
+    };
+  };
+
+  public query ({ caller }) func getAllCustomProviderMetadata() : async [CustomProviderMetadata] {
+    if (not (AccessControl.hasPermission(accessControlState, caller, #user))) {
+      Runtime.trap("Unauthorized: Only users can perform this action");
+    };
+
+    switch (customProviderMetadata.get(caller)) {
+      case (?userMetadata) { userMetadata.values().toArray() };
+      case null { [] };
+    };
+  };
+
+  public query ({ caller }) func getAllUsersCustomProviderMetadata() : async [(Principal, [CustomProviderMetadata])] {
+    if (not (AccessControl.hasPermission(accessControlState, caller, #admin))) {
+      Runtime.trap("Unauthorized: Only admins can perform this action");
+    };
+
+    let result = customProviderMetadata.entries().toArray().map(
+      func((principal, metadataMap)) : (Principal, [CustomProviderMetadata]) {
+        (principal, metadataMap.values().toArray())
+      }
+    );
+    result;
+  };
+
+  // API Key Management - Per User
+  let userAPIKeys = Map.empty<Principal, Map.Map<Text, APIKey>>();
+
+  public shared ({ caller }) func addOrUpdateAPIKey(provider : Text, key : Text) : async () {
+    if (not (AccessControl.hasPermission(accessControlState, caller, #user))) {
+      Runtime.trap("Unauthorized: Only users can manage API keys");
+    };
+
+    let now = Time.now();
+    if (key.size() < 10) {
+      Runtime.trap("API key invalid. Key seems too short.");
+    };
+
+    let apiKeyEntry : APIKey = {
+      provider;
+      key;
+      createdAt = now;
+      updatedAt = now;
+    };
+
+    // Get or create user's key map
+    let userKeys = switch (userAPIKeys.get(caller)) {
+      case (?keys) { keys };
+      case null {
+        let newMap = Map.empty<Text, APIKey>();
+        userAPIKeys.add(caller, newMap);
+        newMap;
+      };
+    };
+    userKeys.add(provider, apiKeyEntry);
+  };
+
+  public query ({ caller }) func getProviderKey(provider : Text) : async ?APIKey {
+    if (not (AccessControl.hasPermission(accessControlState, caller, #user))) {
+      Runtime.trap("Unauthorized: Only users can access API keys");
+    };
+
+    switch (userAPIKeys.get(caller)) {
+      case (?userKeys) { userKeys.get(provider) };
+      case null { null };
+    };
+  };
+
+  public query ({ caller }) func providerKeyExists(provider : Text) : async Bool {
+    if (not (AccessControl.hasPermission(accessControlState, caller, #user))) {
+      Runtime.trap("Unauthorized: Only users can check API keys");
+    };
+
+    switch (userAPIKeys.get(caller)) {
+      case (?userKeys) { userKeys.containsKey(provider) };
+      case null { false };
+    };
+  };
+
+  public query ({ caller }) func getAllAPIKeys() : async [(Principal, [APIKey])] {
+    if (not (AccessControl.hasPermission(accessControlState, caller, #admin))) {
+      Runtime.trap("Unauthorized: Only admins can perform this action");
+    };
+
+    let result = userAPIKeys.entries().toArray().map(
+      func((principal, keysMap)) : (Principal, [APIKey]) {
+        (principal, keysMap.values().toArray().sort())
+      }
+    );
+    result;
+  };
+
+  // Chat Functionalities
+  public type ChatMessage = {
+    fromSystem : Bool;
+    content : Text;
+    provider : Text;
+    timestamp : Time.Time;
+  };
+
+  let chatHistory = Map.empty<Principal, Map.Map<Text, List.List<ChatMessage>>>();
+
+  public shared ({ caller }) func addChatMessage(provider : Text, content : Text) : async () {
+    if (not (AccessControl.hasPermission(accessControlState, caller, #user))) {
+      Runtime.trap("Unauthorized: Only users can use chat");
+    };
+
+    let message : ChatMessage = {
+      fromSystem = false;
+      content;
+      provider;
+      timestamp = Time.now();
+    };
+
+    // Get or create user's chat history
+    let userHistory = switch (chatHistory.get(caller)) {
+      case (?history) { history };
+      case null {
+        let newHistory = Map.empty<Text, List.List<ChatMessage>>();
+        chatHistory.add(caller, newHistory);
+        newHistory;
+      };
+    };
+
+    // Get or create provider's chat messages
+    let messages = switch (userHistory.get(provider)) {
+      case (?msgs) { msgs };
+      case null {
+        let newSeq = List.empty<ChatMessage>();
+        userHistory.add(provider, newSeq);
+        newSeq;
+      };
+    };
+
+    messages.add(message);
+  };
+
+  public query ({ caller }) func streamChatMessages(provider : Text, limit : Nat) : async [ChatMessage] {
+    if (not (AccessControl.hasPermission(accessControlState, caller, #user))) {
+      Runtime.trap("Unauthorized: Only users can access chat messages");
+    };
+
+    switch (chatHistory.get(caller)) {
+      case (?userHistory) {
+        switch (userHistory.get(provider)) {
+          case (?messages) {
+            var currentLength = 0;
+            var iter = messages.values();
+            let filteredIter = iter.takeWhile(
+              func(_) {
+                currentLength += 1;
+                currentLength <= limit;
+              }
+            );
+            return filteredIter.toArray();
+          };
+          case null { return [] };
+        };
+      };
+      case null { return [] };
+    };
+  };
+
+  // Workflow Execution and History
+  public type WorkflowRunStatus = {
+    #pending;
+    #running;
+    #success;
+    #failed : Text; // Error message
+  };
+
+  public type WorkflowRun = {
+    id : Text;
+    provider : Text;
+    workflowType : Text;
+    status : WorkflowRunStatus;
+    inputs : Text;
+    outputBlobId : ?Text;
+    timestamp : Time.Time;
+    durationNanos : ?Int;
+  };
+
+  let workflowRuns = Map.empty<Principal, Map.Map<Text, List.List<WorkflowRun>>>();
+  var nextWorkflowRunId = 0;
+
+  public shared ({ caller }) func executeWorkflow(provider : Text, workflowType : Text, inputs : Text) : async WorkflowRun {
+    if (not (AccessControl.hasPermission(accessControlState, caller, #user))) {
+      Runtime.trap("Unauthorized: Only users can execute workflows");
+    };
+
+    let runId = nextWorkflowRunId.toText();
+    nextWorkflowRunId += 1;
+
+    let run : WorkflowRun = {
+      id = runId;
+      provider;
+      workflowType;
+      status = #pending;
+      inputs;
+      outputBlobId = null;
+      timestamp = Time.now();
+      durationNanos = null;
+    };
+
+    addWorkflowRunInternal(caller, run);
+    run;
+  };
+
+  public query ({ caller }) func getWorkflowRuns(provider : Text) : async [WorkflowRun] {
+    if (not (AccessControl.hasPermission(accessControlState, caller, #user))) {
+      Runtime.trap("Unauthorized: Only users can access workflow runs");
+    };
+
+    switch (workflowRuns.get(caller)) {
+      case (?userRuns) {
+        switch (userRuns.get(provider)) {
+          case (?runs) { runs.toArray() };
+          case null { [] };
+        };
+      };
+      case null { [] };
+    };
+  };
+
+  public shared ({ caller }) func updateWorkflowRun(runId : Text, status : WorkflowRunStatus, outputBlobId : ?Text, durationNanos : ?Int) : async WorkflowRun {
+    if (not (AccessControl.hasPermission(accessControlState, caller, #user))) {
+      Runtime.trap("Unauthorized: Only users can update workflow runs");
+    };
+
+    switch (workflowRuns.get(caller)) {
+      case (?userRuns) {
+        var found = false;
+        for ((provider, runs) in userRuns.entries()) {
+          let newRuns = runs.map<WorkflowRun, WorkflowRun>(
+            func(run) {
+              if (run.id == runId) {
+                found := true;
+                { run with status; outputBlobId; durationNanos };
+              } else {
+                run;
+              };
+            }
+          );
+          userRuns.add(provider, newRuns);
+        };
+
+        if (not found) {
+          Runtime.trap("Unauthorized: Workflow run not found or does not belong to caller");
+        };
+
+        switch (findWorkflowRun(userRuns, runId)) {
+          case (?updatedRun) { updatedRun };
+          case null { Runtime.trap("Workflow run not found after update"); };
+        };
+      };
+      case null { Runtime.trap("Unauthorized: No workflow runs found for user") };
+    };
+  };
+
+  func addWorkflowRunInternal(user : Principal, run : WorkflowRun) {
+    let userRunsMap = switch (workflowRuns.get(user)) {
+      case (?runs) { runs };
+      case null {
+        let newMap = Map.empty<Text, List.List<WorkflowRun>>();
+        workflowRuns.add(user, newMap);
+        newMap;
+      };
+    };
+
+    let providerRuns = switch (userRunsMap.get(run.provider)) {
+      case (?runs) { runs };
+      case null {
+        let newList = List.empty<WorkflowRun>();
+        userRunsMap.add(run.provider, newList);
+        newList;
+      };
+    };
+    providerRuns.add(run);
+  };
+
+  func findWorkflowRun(userRunsMap : Map.Map<Text, List.List<WorkflowRun>>, runId : Text) : ?WorkflowRun {
+    for ((_, runs) in userRunsMap.entries()) {
+      for (run in runs.values()) {
+        if (run.id == runId) {
+          return ?run;
+        };
+      };
+    };
+    null;
+  };
+
+  include MixinStorage();
+
+  public query ({ caller }) func getCurrentUser() : async Principal {
+    caller;
+  };
+
+  // Cancel Specific Workflow Run
+  public shared ({ caller }) func cancelWorkflowRun(runId : Text) : async () {
+    if (not (AccessControl.hasPermission(accessControlState, caller, #user))) {
+      Runtime.trap("Unauthorized: Only users can cancel workflow runs");
+    };
+
+    var runFound = false;
+
+    switch (workflowRuns.get(caller)) {
+      case (?userRuns) {
+        for ((provider, runs) in userRuns.entries()) {
+          let updatedRuns = runs.map<WorkflowRun, WorkflowRun>(
+            func(run) {
+              if (run.id == runId and (run.status == #pending or run.status == #running)) {
+                runFound := true;
+                { run with status = #failed("Cancelled by the user."); };
+              } else if (run.id == runId) {
+                runFound := true;
+                return run;
+              } else {
+                run;
+              };
+            }
+          );
+          userRuns.add(provider, updatedRuns);
+        };
+      };
+      case null {
+        Runtime.trap("No workflow runs found for user;");
+      };
+    };
+
+    if (not runFound) {
+      Runtime.trap("Run could not be cancelled. Either the workflow run does not exist or it has already been finished.");
+    };
+  };
+
+  // Cancel all pending workflow runs for a provider
+  public shared ({ caller }) func cancelPendingWorkflowRunsForProvider(provider : Text) : async () {
+    if (not (AccessControl.hasPermission(accessControlState, caller, #user))) {
+      Runtime.trap("Unauthorized: Only users can cancel workflow runs");
+    };
+
+    switch (workflowRuns.get(caller)) {
+      case (?userRuns) {
+        for ((currentProvider, runs) in userRuns.entries()) {
+          if (currentProvider == provider) {
+            let updatedRuns = runs.map<WorkflowRun, WorkflowRun>(
+              func(run) {
+                switch (run.status) {
+                  case (#pending or #running) {
+                    { run with status = #failed("Cancelled due to bulk cancellation"); };
+                  };
+                  case (_) { run };
+                };
+              }
+            );
+            userRuns.add(currentProvider, updatedRuns);
+          };
+        };
+      };
+      case null {
+        Runtime.trap("No workflow runs found for user");
+      };
+    };
+  };
+};

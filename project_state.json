@@ -1,0 +1,32 @@
+{
+  "schemaVersion": "1.0.0",
+  "projectStateVersion": 3,
+  "summary": "New project",
+  "architectural_notes": [],
+  "known_issues": [
+    "ZIP download link not appearing / ZIP not generated; user requested regenerating the ZIP."
+  ],
+  "isFixRequest": true,
+  "existing_features": [
+    {
+      "id": "feature-generate-a-new-downloadable-zip-archive-containing-the-exact-current-deployed-empire-c-c-codebase-frontend-backend-all-project-configuration-files-required-to-build-and-deploy-the-same-app-and-present-a-fresh-download-link-button-to-the-user-in-the-chat",
+      "title": "Generate a new downloadable ZIP archive containing the exact current deployed Empire C.C codebase (frontend + backend + all project configuration files required to build and deploy the same app), and present a fresh download link/button to the user in the chat.",
+      "reqIds": [
+        "REQ-1"
+      ],
+      "version": 1
+    },
+    {
+      "id": "feature-include-a-readme-in-english-inside-the-generated-zip-that-documents-how-to-install-dependencies-how-to-run-the-app-locally-how-to-deploy-the-canister-s-and-where-how-to-configure-provider-keys-using-the-app-s-existing-key-vault-flow",
+      "title": "Include a README (in English) inside the generated ZIP that documents: how to install dependencies, how to run the app locally, how to deploy the canister(s), and where/how to configure provider keys using the app’s existing key vault flow.",
+      "reqIds": [
+        "REQ-2"
+      ],
+      "version": 1
+    }
+  ],
+  "new_feature_requests": [],
+  "projectName": "Empire C.C",
+  "clarification_mode": "instant",
+  "clarification_rounds": 0
+}

@@ -1,0 +1,49 @@
+{
+  "kind": "feature_evidence_report",
+  "features": [
+    {
+      "featureId": "feature-generate-a-new-downloadable-zip-archive-containing-the-exact-current-deployed-empire-c-c-codebase-frontend-backend-all-project-configuration-files-required-to-build-and-deploy-the-same-app-and-present-a-fresh-download-link-button-to-the-user-in-the-chat",
+      "featureTitle": "Generate a new downloadable ZIP archive containing the exact current deployed Empire C.C codebase (frontend + backend + all project configuration files required to build and deploy the same app), and present a fresh download link/button to the user in the chat.",
+      "files": [
+        "frontend/src/components/chat/ChatMessageContent.tsx",
+        "frontend/src/components/chat/ChatbotCommandCenter.tsx"
+      ],
+      "components": [
+        "authorization@4.0.0",
+        "blob-storage@4.0.0",
+        "http-outcalls@3.0.0",
+        "core-infrastructure@1.0.2",
+        "shadcn-ui@1.0.0",
+        "build-template-react@1.0.0",
+        "initial-app@1.0.0",
+        "github-export-icp-cli@1.0.0"
+      ],
+      "testIds": [
+        "REQ-1"
+      ],
+      "confidence": "high"
+    },
+    {
+      "featureId": "feature-include-a-readme-in-english-inside-the-generated-zip-that-documents-how-to-install-dependencies-how-to-run-the-app-locally-how-to-deploy-the-canister-s-and-where-how-to-configure-provider-keys-using-the-app-s-existing-key-vault-flow",
+      "featureTitle": "Include a README (in English) inside the generated ZIP that documents: how to install dependencies, how to run the app locally, how to deploy the canister(s), and where/how to configure provider keys using the app’s existing key vault flow.",
+      "files": [
+        "frontend/public/export/README.md",
+        "frontend/src/pages/LinksDashboardPage.tsx"
+      ],
+      "components": [
+        "authorization@4.0.0",
+        "blob-storage@4.0.0",
+        "http-outcalls@3.0.0",
+        "core-infrastructure@1.0.2",
+        "shadcn-ui@1.0.0",
+        "build-template-react@1.0.0",
+        "initial-app@1.0.0",
+        "github-export-icp-cli@1.0.0"
+      ],
+      "testIds": [
+        "REQ-2"
+      ],
+      "confidence": "high"
+    }
+  ]
+}

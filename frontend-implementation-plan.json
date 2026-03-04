@@ -1,0 +1,50 @@
+{
+  "kind": "implementation_plan",
+  "version": "1.0",
+  "title": "Empire C.C — Regenerate downloadable codebase ZIP export (frontend wiring)",
+  "requirements": [
+    {
+      "id": "REQ-1",
+      "summary": "Render a fresh ZIP download link/button in the in-app chat when the backend (or assistant) posts a ZIP URL.",
+      "acceptanceCriteria": [
+        "A single ZIP archive is produced containing frontend/, backend/, and all required root-level project configuration files (e.g., dfx.json, package manifests, build config) needed to build and deploy the same app.",
+        "A downloadable link/button is displayed to the user after generation, and clicking it downloads the ZIP successfully.",
+        "The ZIP contents match the current deployed version of the app (no missing recently-added files such as PWA assets and generated icons)."
+      ],
+      "file_operations": [
+        {
+          "path": "frontend/src/components/chat/ChatMessageContent.tsx",
+          "operation": "create",
+          "description": "Create a small chat message renderer that detects URLs in message content and renders them as accessible links, with special handling for .zip URLs (show a clear download action/button while preserving the original text)."
+        },
+        {
+          "path": "frontend/src/components/chat/ChatbotCommandCenter.tsx",
+          "operation": "modify",
+          "description": "Update message rendering to use ChatMessageContent so system messages that contain a ZIP URL display a dedicated download link/button (no changes under frontend/src/components/ui)."
+        }
+      ]
+    },
+    {
+      "id": "REQ-2",
+      "summary": "Provide an English export README artifact in the frontend bundle and surface it in the UI so it can be included/validated during ZIP export regeneration.",
+      "acceptanceCriteria": [
+        "The ZIP includes a top-level README.md written in English.",
+        "README.md includes step-by-step commands for installing dependencies and running the frontend locally.",
+        "README.md includes step-by-step commands for deploying the canister(s) with dfx.",
+        "README.md explains how users add/manage provider API keys via the existing in-app Key Vault UI flow (no external secret manager required)."
+      ],
+      "file_operations": [
+        {
+          "path": "frontend/public/export/README.md",
+          "operation": "create",
+          "description": "Add an English README artifact (static file) documenting dependency install, local run, dfx deploy, and how to configure provider keys via the existing in-app Key Vault flow; intended to be picked up by the ZIP export process as part of the codebase snapshot."
+        },
+        {
+          "path": "frontend/src/pages/LinksDashboardPage.tsx",
+          "operation": "modify",
+          "description": "Add a minimal, non-intrusive card/section linking to the static export README (frontend/public/export/README.md) so users can open/verify the documentation from the app without changing overall navigation or UI/UX patterns."
+        }
+      ]
+    }
+  ]
+}
