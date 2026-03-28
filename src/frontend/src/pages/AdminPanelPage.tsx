@@ -1,8 +1,14 @@
-import { useIsCallerAdmin } from '@/hooks/useQueries';
-import NotIntegratedCallout from '@/components/common/NotIntegratedCallout';
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
-import { Alert, AlertDescription, AlertTitle } from '@/components/ui/alert';
-import { Shield, AlertCircle } from 'lucide-react';
+import NotIntegratedCallout from "@/components/common/NotIntegratedCallout";
+import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert";
+import {
+  Card,
+  CardContent,
+  CardDescription,
+  CardHeader,
+  CardTitle,
+} from "@/components/ui/card";
+import { useIsCallerAdmin } from "@/hooks/useQueries";
+import { AlertCircle, Shield } from "lucide-react";
 
 export default function AdminPanelPage() {
   const { data: isAdmin, isLoading } = useIsCallerAdmin();
@@ -10,7 +16,9 @@ export default function AdminPanelPage() {
   if (isLoading) {
     return (
       <div className="flex h-full items-center justify-center">
-        <div className="text-sm text-muted-foreground">Checking permissions...</div>
+        <div className="text-sm text-muted-foreground">
+          Checking permissions...
+        </div>
       </div>
     );
   }
@@ -37,15 +45,21 @@ export default function AdminPanelPage() {
         </div>
         <div>
           <h1 className="text-2xl font-bold sm:text-3xl">Admin Panel</h1>
-          <p className="text-sm text-muted-foreground sm:text-base">System administration and management tools</p>
+          <p className="text-sm text-muted-foreground sm:text-base">
+            System administration and management tools
+          </p>
         </div>
       </div>
 
       <div className="grid gap-4 sm:gap-6 md:grid-cols-2">
         <Card>
           <CardHeader>
-            <CardTitle className="text-lg sm:text-xl">Provider Management</CardTitle>
-            <CardDescription className="text-sm">Initialize and configure AI providers</CardDescription>
+            <CardTitle className="text-lg sm:text-xl">
+              Provider Management
+            </CardTitle>
+            <CardDescription className="text-sm">
+              Initialize and configure AI providers
+            </CardDescription>
           </CardHeader>
           <CardContent>
             <NotIntegratedCallout
@@ -57,8 +71,12 @@ export default function AdminPanelPage() {
 
         <Card>
           <CardHeader>
-            <CardTitle className="text-lg sm:text-xl">User Management</CardTitle>
-            <CardDescription className="text-sm">View and manage user accounts</CardDescription>
+            <CardTitle className="text-lg sm:text-xl">
+              User Management
+            </CardTitle>
+            <CardDescription className="text-sm">
+              View and manage user accounts
+            </CardDescription>
           </CardHeader>
           <CardContent>
             <NotIntegratedCallout
@@ -71,7 +89,9 @@ export default function AdminPanelPage() {
         <Card>
           <CardHeader>
             <CardTitle className="text-lg sm:text-xl">Discount Codes</CardTitle>
-            <CardDescription className="text-sm">Create and manage promotional codes</CardDescription>
+            <CardDescription className="text-sm">
+              Create and manage promotional codes
+            </CardDescription>
           </CardHeader>
           <CardContent>
             <NotIntegratedCallout
@@ -83,8 +103,12 @@ export default function AdminPanelPage() {
 
         <Card>
           <CardHeader>
-            <CardTitle className="text-lg sm:text-xl">Memory Injection</CardTitle>
-            <CardDescription className="text-sm">Manually inject memories into the Empire Brain</CardDescription>
+            <CardTitle className="text-lg sm:text-xl">
+              Memory Injection
+            </CardTitle>
+            <CardDescription className="text-sm">
+              Manually inject memories into the Empire Brain
+            </CardDescription>
           </CardHeader>
           <CardContent>
             <NotIntegratedCallout

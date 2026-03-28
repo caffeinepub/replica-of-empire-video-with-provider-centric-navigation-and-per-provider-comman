@@ -1,9 +1,9 @@
-import { type ReactNode, useState } from 'react';
-import { useProviderKey } from '@/hooks/keys/useProviderKey';
-import { useBackendActor } from '@/hooks/useBackendActor';
-import { Alert, AlertDescription, AlertTitle } from '@/components/ui/alert';
-import { AlertCircle, Loader2 } from 'lucide-react';
-import BackendConnectionAlert from '@/components/common/BackendConnectionAlert';
+import BackendConnectionAlert from "@/components/common/BackendConnectionAlert";
+import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert";
+import { useProviderKey } from "@/hooks/keys/useProviderKey";
+import { useBackendActor } from "@/hooks/useBackendActor";
+import { AlertCircle, Loader2 } from "lucide-react";
+import { type ReactNode, useState } from "react";
 
 interface ProviderActionGuardProps {
   providerId: string;
@@ -16,7 +16,7 @@ export default function ProviderActionGuard({
   providerName,
   children,
 }: ProviderActionGuardProps) {
-  const { isConnecting, isReady, error, retry } = useBackendActor();
+  const { isConnecting, error, retry } = useBackendActor();
   const { data: keyExists, isLoading } = useProviderKey(providerId);
   const [isRetrying, setIsRetrying] = useState(false);
 
@@ -28,7 +28,13 @@ export default function ProviderActionGuard({
 
   // Show connection error if backend is not available
   if (error && !isConnecting) {
-    return <BackendConnectionAlert error={error} onRetry={handleRetry} isRetrying={isRetrying} />;
+    return (
+      <BackendConnectionAlert
+        error={error}
+        onRetry={handleRetry}
+        isRetrying={isRetrying}
+      />
+    );
   }
 
   // Show connecting state
@@ -62,7 +68,8 @@ export default function ProviderActionGuard({
         <AlertCircle className="h-4 w-4" />
         <AlertTitle>API Key Required</AlertTitle>
         <AlertDescription>
-          Please add your {providerName} API key in the section above to use this feature.
+          Please add your {providerName} API key in the section above to use
+          this feature.
         </AlertDescription>
       </Alert>
     );

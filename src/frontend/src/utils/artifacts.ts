@@ -11,19 +11,21 @@ export function getArtifactDirectURL(blobId: string): string {
  * Download an artifact with a reasonable filename
  */
 export async function downloadArtifact(
-  blobId: string,
-  filename: string,
-  mimeType: string = 'application/octet-stream'
+  _blobId: string,
+  _filename: string,
+  _mimeType = "application/octet-stream",
 ): Promise<void> {
   try {
     // For now, this is a placeholder
     // In a real implementation, this would:
     // 1. Use ExternalBlob.fromURL(blobId).getBytes()
     // 2. Create a Blob and trigger download
-    throw new Error('Artifact download not yet implemented. Blob storage integration required.');
+    throw new Error(
+      "Artifact download not yet implemented. Blob storage integration required.",
+    );
   } catch (error) {
-    console.error('Download failed:', error);
-    throw new Error('Failed to download artifact. Please try again.');
+    console.error("Download failed:", error);
+    throw new Error("Failed to download artifact. Please try again.");
   }
 }
 
@@ -31,21 +33,21 @@ export async function downloadArtifact(
  * Get the appropriate MIME type based on file extension
  */
 export function getMimeTypeFromFilename(filename: string): string {
-  const ext = filename.split('.').pop()?.toLowerCase();
-  
+  const ext = filename.split(".").pop()?.toLowerCase();
+
   const mimeTypes: Record<string, string> = {
-    'png': 'image/png',
-    'jpg': 'image/jpeg',
-    'jpeg': 'image/jpeg',
-    'gif': 'image/gif',
-    'webp': 'image/webp',
-    'mp4': 'video/mp4',
-    'webm': 'video/webm',
-    'mov': 'video/quicktime',
-    'avi': 'video/x-msvideo',
+    png: "image/png",
+    jpg: "image/jpeg",
+    jpeg: "image/jpeg",
+    gif: "image/gif",
+    webp: "image/webp",
+    mp4: "video/mp4",
+    webm: "video/webm",
+    mov: "video/quicktime",
+    avi: "video/x-msvideo",
   };
-  
-  return mimeTypes[ext || ''] || 'application/octet-stream';
+
+  return mimeTypes[ext || ""] || "application/octet-stream";
 }
 
 /**
@@ -54,8 +56,8 @@ export function getMimeTypeFromFilename(filename: string): string {
 export function generateArtifactFilename(
   workflowType: string,
   provider: string,
-  extension: string
+  extension: string,
 ): string {
-  const timestamp = new Date().toISOString().replace(/[:.]/g, '-').slice(0, -5);
+  const timestamp = new Date().toISOString().replace(/[:.]/g, "-").slice(0, -5);
   return `${provider}-${workflowType}-${timestamp}.${extension}`;
 }

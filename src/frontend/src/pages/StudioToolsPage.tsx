@@ -1,6 +1,12 @@
-import NotIntegratedCallout from '@/components/common/NotIntegratedCallout';
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
-import { Wrench, Paintbrush, Wand2, History } from 'lucide-react';
+import NotIntegratedCallout from "@/components/common/NotIntegratedCallout";
+import {
+  Card,
+  CardContent,
+  CardDescription,
+  CardHeader,
+  CardTitle,
+} from "@/components/ui/card";
+import { History, Paintbrush, Wand2, Wrench } from "lucide-react";
 
 export default function StudioToolsPage() {
   return (
@@ -11,7 +17,9 @@ export default function StudioToolsPage() {
         </div>
         <div>
           <h1 className="text-2xl font-bold sm:text-3xl">Studio Tools</h1>
-          <p className="text-sm text-muted-foreground sm:text-base">Advanced tools for content creation and management</p>
+          <p className="text-sm text-muted-foreground sm:text-base">
+            Advanced tools for content creation and management
+          </p>
         </div>
       </div>
 
@@ -22,7 +30,9 @@ export default function StudioToolsPage() {
               <Paintbrush className="h-5 w-5 text-primary sm:h-6 sm:w-6" />
               <CardTitle className="text-lg sm:text-xl">Motion Brush</CardTitle>
             </div>
-            <CardDescription className="text-sm">Paint motion paths on images for video generation</CardDescription>
+            <CardDescription className="text-sm">
+              Paint motion paths on images for video generation
+            </CardDescription>
           </CardHeader>
           <CardContent>
             <NotIntegratedCallout
@@ -38,7 +48,9 @@ export default function StudioToolsPage() {
               <Wand2 className="h-5 w-5 text-primary sm:h-6 sm:w-6" />
               <CardTitle className="text-lg sm:text-xl">Magic Script</CardTitle>
             </div>
-            <CardDescription className="text-sm">Transform simple prompts into detailed generation scripts</CardDescription>
+            <CardDescription className="text-sm">
+              Transform simple prompts into detailed generation scripts
+            </CardDescription>
           </CardHeader>
           <CardContent>
             <NotIntegratedCallout
@@ -52,9 +64,13 @@ export default function StudioToolsPage() {
           <CardHeader>
             <div className="flex items-center gap-3">
               <History className="h-5 w-5 text-primary sm:h-6 sm:w-6" />
-              <CardTitle className="text-lg sm:text-xl">Generation History</CardTitle>
+              <CardTitle className="text-lg sm:text-xl">
+                Generation History
+              </CardTitle>
             </div>
-            <CardDescription className="text-sm">View and manage your generated assets</CardDescription>
+            <CardDescription className="text-sm">
+              View and manage your generated assets
+            </CardDescription>
           </CardHeader>
           <CardContent>
             <NotIntegratedCallout

@@ -1,11 +1,21 @@
-import { Card, CardContent } from '@/components/ui/card';
-import { Button } from '@/components/ui/button';
-import { Badge } from '@/components/ui/badge';
-import { Download, Share2, RotateCcw, Loader2, CheckCircle2, XCircle, Clock } from 'lucide-react';
-import { toast } from 'sonner';
-import type { WorkflowRun } from '@/backend';
-import type { WorkflowType } from '@/providers/providers';
-import { shareArtifact } from '@/utils/share';
+import type { WorkflowRun } from "@/backend";
+import { Badge } from "@/components/ui/badge";
+import { Button } from "@/components/ui/button";
+import { Card, CardContent } from "@/components/ui/card";
+import type { WorkflowType } from "@/providers/providers";
+import { shareArtifact } from "@/utils/share";
+import {
+  AlertCircle,
+  CheckCircle2,
+  Clock,
+  Download,
+  Loader2,
+  RotateCcw,
+  Share2,
+  XCircle,
+} from "lucide-react";
+import { useState } from "react";
+import { toast } from "sonner";
 
 interface GenerationHistoryProps {
   runs: WorkflowRun[];
@@ -13,22 +23,28 @@ interface GenerationHistoryProps {
   workflowType: WorkflowType;
 }
 
-export function GenerationHistory({ runs, provider, workflowType }: GenerationHistoryProps) {
+export function GenerationHistory({
+  runs,
+  provider,
+  workflowType,
+}: GenerationHistoryProps) {
+  const [failedImages, setFailedImages] = useState<Set<string>>(new Set());
+
   const handleDownload = async (run: WorkflowRun) => {
     if (!run.outputBlobId) return;
 
     try {
-      const link = document.createElement('a');
+      const link = document.createElement("a");
       link.href = run.outputBlobId;
       link.download = `${provider}-${workflowType}-${run.id}.png`;
       document.body.appendChild(link);
       link.click();
       document.body.removeChild(link);
-      
-      toast.success('Download started');
+
+      toast.success("Download started");
     } catch (error) {
-      console.error('Download failed:', error);
-      toast.error('Failed to download');
+      console.error("Download failed:", error);
+      toast.error("Failed to download");
     }
   };
 
@@ -38,30 +54,29 @@ export function GenerationHistory({ runs, provider, workflowType }: GenerationHi
     try {
       await shareArtifact(run.outputBlobId, `${provider} ${workflowType}`);
     } catch (error) {
-      console.error('Share failed:', error);
-      toast.error('Failed to share');
+      console.error("Share failed:", error);
+      toast.error("Failed to share");
     }
   };
 
-  const handleReuse = (run: WorkflowRun) => {
-    try {
-      const inputs = JSON.parse(run.inputs);
-      // This would ideally populate the form, but for now just show a toast
-      toast.info('Copy the prompt from this generation to reuse it');
-    } catch (error) {
-      console.error('Failed to parse inputs:', error);
-    }
+  const handleReuse = (_run: WorkflowRun) => {
+    toast.info("Copy the prompt from this generation to reuse it");
   };
 
-  const getStatusIcon = (status: WorkflowRun['status']) => {
+  const handleImageError = (runId: string) => {
+    console.error("Thumbnail failed to load for run:", runId);
+    setFailedImages((prev) => new Set(prev).add(runId));
+  };
+
+  const getStatusIcon = (status: WorkflowRun["status"]) => {
     switch (status.__kind__) {
-      case 'pending':
+      case "pending":
         return <Clock className="h-3 w-3" />;
-      case 'running':
+      case "running":
         return <Loader2 className="h-3 w-3 animate-spin" />;
-      case 'success':
+      case "success":
         return <CheckCircle2 className="h-3 w-3" />;
-      case 'failed':
+      case "failed":
         return <XCircle className="h-3 w-3" />;
     }
   };
@@ -73,14 +88,24 @@ export function GenerationHistory({ runs, provider, workflowType }: GenerationHi
   return (
     <div className="grid gap-3 sm:grid-cols-2 lg:grid-cols-3">
       {runs.map((run) => {
-        const isComplete = run.status.__kind__ === 'success';
-        const isFailed = run.status.__kind__ === 'failed';
+        const isComplete = run.status.__kind__ === "success";
+        const isFailed = run.status.__kind__ === "failed";
+        const imageHasFailed = failedImages.has(run.id);
 
         return (
           <Card key={run.id} className="overflow-hidden">
             <CardContent className="p-3 space-y-2">
               <div className="flex items-center justify-between">
-                <Badge variant={isComplete ? 'default' : isFailed ? 'destructive' : 'outline'} className="gap-1">
+                <Badge
+                  variant={
+                    isComplete
+                      ? "default"
+                      : isFailed
+                        ? "destructive"
+                        : "outline"
+                  }
+                  className="gap-1"
+                >
                   {getStatusIcon(run.status)}
                   {run.status.__kind__}
                 </Badge>
@@ -91,24 +116,38 @@ export function GenerationHistory({ runs, provider, workflowType }: GenerationHi
                 )}
               </div>
 
-              {isComplete && run.outputBlobId && (
+              {isComplete && run.outputBlobId && !imageHasFailed && (
                 <div className="relative aspect-square w-full overflow-hidden rounded border bg-muted">
-                  {workflowType === 'video-generation' ? (
+                  {workflowType === "video-generation" ? (
+                    // biome-ignore lint/a11y/useMediaCaption: AI-generated video content
                     <video
                       src={run.outputBlobId}
                       className="h-full w-full object-cover"
+                      onError={() => handleImageError(run.id)}
                     />
                   ) : (
                     <img
                       src={run.outputBlobId}
                       alt="Generated content"
                       className="h-full w-full object-cover"
+                      onError={() => handleImageError(run.id)}
                     />
                   )}
                 </div>
               )}
 
-              {isFailed && run.status.__kind__ === 'failed' && (
+              {isComplete && imageHasFailed && (
+                <div className="relative aspect-square w-full overflow-hidden rounded border bg-muted flex items-center justify-center p-4">
+                  <div className="text-center space-y-2">
+                    <AlertCircle className="h-8 w-8 text-destructive mx-auto" />
+                    <p className="text-xs text-muted-foreground">
+                      Failed to load preview
+                    </p>
+                  </div>
+                </div>
+              )}
+
+              {isFailed && run.status.__kind__ === "failed" && (
                 <div className="text-xs text-destructive line-clamp-2">
                   {run.status.failed}
                 </div>
@@ -119,7 +158,7 @@ export function GenerationHistory({ runs, provider, workflowType }: GenerationHi
                   {(() => {
                     try {
                       const inputs = JSON.parse(run.inputs);
-                      return inputs.prompt || inputs.script || 'No prompt';
+                      return inputs.prompt || inputs.script || "No prompt";
                     } catch {
                       return run.inputs;
                     }

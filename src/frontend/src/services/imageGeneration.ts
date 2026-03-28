@@ -1,330 +1,366 @@
-import type { WorkflowRun } from '@/backend';
+import type { ProviderConfig } from "@/providers/providers";
 
-interface ImageGenerationParams {
-  provider: string;
-  model?: string;
+export interface ImageGenerationParams {
   prompt: string;
+  apiKey: string;
+  provider: ProviderConfig;
+  model?: string;
   positivePrompt?: string;
   negativePrompt?: string;
-  aspectRatio?: string;
-  style?: string;
-  [key: string]: any;
+  imageSize?: string;
 }
 
-interface ImageGenerationResult {
+export interface ImageGenerationResult {
   imageUrl: string;
-  imageData?: Uint8Array;
+  imageBytes?: Uint8Array;
 }
 
 /**
- * Generate an image using OpenAI DALL-E
+ * Generate an image using the specified provider's API
  */
-async function generateWithOpenAI(apiKey: string, params: ImageGenerationParams): Promise<ImageGenerationResult> {
-  const response = await fetch('https://api.openai.com/v1/images/generations', {
-    method: 'POST',
+export async function generateImage(
+  params: ImageGenerationParams,
+): Promise<ImageGenerationResult> {
+  const {
+    prompt,
+    apiKey,
+    provider,
+    model,
+    positivePrompt,
+    negativePrompt,
+    imageSize,
+  } = params;
+
+  switch (provider.id) {
+    case "openai":
+      return generateOpenAIImage(prompt, apiKey);
+    case "fal-ai":
+      return generateFalAIImage(
+        prompt,
+        apiKey,
+        model,
+        positivePrompt,
+        negativePrompt,
+        imageSize,
+      );
+    case "stability-ai":
+      return generateStabilityAIImage(prompt, apiKey, model);
+    case "replicate":
+      return generateReplicateImage(prompt, apiKey, model);
+    case "leonardo-ai":
+      return generateLeonardoAIImage(prompt, apiKey, model);
+    default:
+      throw new Error(
+        `Image generation not implemented for provider: ${provider.id}`,
+      );
+  }
+}
+
+async function generateOpenAIImage(
+  prompt: string,
+  apiKey: string,
+): Promise<ImageGenerationResult> {
+  const response = await fetch("https://api.openai.com/v1/images/generations", {
+    method: "POST",
     headers: {
-      'Content-Type': 'application/json',
-      'Authorization': `Bearer ${apiKey}`,
+      "Content-Type": "application/json",
+      Authorization: `Bearer ${apiKey}`,
     },
     body: JSON.stringify({
-      model: 'dall-e-3',
-      prompt: params.prompt,
+      model: "dall-e-3",
+      prompt,
       n: 1,
-      size: '1024x1024',
-      quality: 'standard',
-      response_format: 'url',
+      size: "1024x1024",
     }),
   });
 
   if (!response.ok) {
-    const error = await response.json().catch(() => ({ error: { message: 'Unknown error' } }));
-    throw new Error(error.error?.message || `OpenAI API error: ${response.status}`);
+    const errorData = await response.json().catch(() => ({}));
+    throw new Error(
+      errorData.error?.message ||
+        `OpenAI API error: ${response.status} ${response.statusText}`,
+    );
   }
 
   const data = await response.json();
-  const imageUrl = data.data[0].url;
+  if (!data.data?.[0]?.url) {
+    throw new Error(
+      "No image URL returned from OpenAI. The generation may have failed.",
+    );
+  }
 
-  // Fetch the image data
-  const imageResponse = await fetch(imageUrl);
-  const imageBlob = await imageResponse.blob();
-  const imageData = new Uint8Array(await imageBlob.arrayBuffer());
-
-  return { imageUrl, imageData };
+  return { imageUrl: data.data[0].url };
 }
 
-/**
- * Generate an image using Fal.ai Flux models
- */
-async function generateWithFalAI(apiKey: string, params: ImageGenerationParams): Promise<ImageGenerationResult> {
-  const model = params.model || 'fal-ai/flux-pro';
-  
-  // Combine prompts
-  let fullPrompt = params.prompt || '';
-  if (params.positivePrompt) {
-    fullPrompt = `${fullPrompt} ${params.positivePrompt}`.trim();
+async function generateFalAIImage(
+  prompt: string,
+  apiKey: string,
+  model?: string,
+  positivePrompt?: string,
+  negativePrompt?: string,
+  imageSize?: string,
+): Promise<ImageGenerationResult> {
+  const selectedModel = model || "fal-ai/flux-pro";
+
+  // Validate model selection
+  const validModels = [
+    "fal-ai/flux-pro",
+    "fal-ai/flux-dev",
+    "fal-ai/flux-schnell",
+  ];
+  if (!validModels.includes(selectedModel)) {
+    throw new Error(
+      `The selected model "${selectedModel}" is not available. Please choose from: ${validModels.join(", ")}`,
+    );
   }
 
   const requestBody: any = {
-    prompt: fullPrompt,
+    prompt: prompt || positivePrompt || "A beautiful landscape",
   };
 
-  if (params.negativePrompt) {
-    requestBody.negative_prompt = params.negativePrompt;
+  if (positivePrompt?.trim()) {
+    requestBody.prompt = positivePrompt;
   }
 
-  const response = await fetch(`https://fal.run/${model}`, {
-    method: 'POST',
+  if (negativePrompt?.trim()) {
+    requestBody.negative_prompt = negativePrompt;
+  }
+
+  if (imageSize) {
+    requestBody.image_size = imageSize;
+  }
+
+  const response = await fetch(`https://fal.run/${selectedModel}`, {
+    method: "POST",
     headers: {
-      'Content-Type': 'application/json',
-      'Authorization': `Key ${apiKey}`,
+      "Content-Type": "application/json",
+      Authorization: `Key ${apiKey}`,
     },
     body: JSON.stringify(requestBody),
   });
 
   if (!response.ok) {
-    const error = await response.json().catch(() => ({ error: 'Unknown error' }));
-    throw new Error(error.error || error.detail || `Fal.ai API error: ${response.status}`);
+    if (response.status === 404) {
+      throw new Error(
+        `The selected model endpoint "${selectedModel}" was not found. This model may no longer be available. Please select a different model and try again.`,
+      );
+    }
+    const errorData = await response.json().catch(() => ({}));
+    throw new Error(
+      errorData.error?.message ||
+        errorData.detail ||
+        `Fal.ai API error: ${response.status} ${response.statusText}`,
+    );
   }
 
   const data = await response.json();
-  const imageUrl = data.images?.[0]?.url || data.image?.url;
 
-  if (!imageUrl) {
-    throw new Error('No image URL returned from Fal.ai');
+  // Validate response structure
+  if (!data.images || !Array.isArray(data.images) || data.images.length === 0) {
+    throw new Error(
+      "No images returned from Fal.ai. The generation may have failed or returned an empty result.",
+    );
   }
 
-  // Fetch the image data
-  const imageResponse = await fetch(imageUrl);
-  const imageBlob = await imageResponse.blob();
-  const imageData = new Uint8Array(await imageBlob.arrayBuffer());
+  const imageUrl = data.images[0].url;
+  if (!imageUrl || typeof imageUrl !== "string") {
+    throw new Error(
+      "Invalid image URL returned from Fal.ai. The image data may be corrupted.",
+    );
+  }
 
-  return { imageUrl, imageData };
+  // Validate that the image URL is accessible
+  try {
+    const imageResponse = await fetch(imageUrl, { method: "HEAD" });
+    if (!imageResponse.ok) {
+      throw new Error(
+        `Image URL is not accessible (status: ${imageResponse.status})`,
+      );
+    }
+    const contentType = imageResponse.headers.get("content-type");
+    if (!contentType || !contentType.startsWith("image/")) {
+      throw new Error(
+        `Invalid content type: expected image, got ${contentType || "unknown"}`,
+      );
+    }
+  } catch (error: any) {
+    throw new Error(
+      `Failed to validate generated image: ${error.message}. The image may not have been generated correctly.`,
+    );
+  }
+
+  return { imageUrl };
 }
 
-/**
- * Generate an image using Stability AI
- */
-async function generateWithStabilityAI(apiKey: string, params: ImageGenerationParams): Promise<ImageGenerationResult> {
-  const model = params.model || 'stable-diffusion-xl-1024-v1-0';
-  
-  // Map aspect ratio to dimensions
-  const aspectRatioMap: Record<string, { width: number; height: number }> = {
-    '1:1': { width: 1024, height: 1024 },
-    '16:9': { width: 1344, height: 768 },
-    '9:16': { width: 768, height: 1344 },
-    '4:3': { width: 1152, height: 896 },
-  };
-  
-  const dimensions = aspectRatioMap[params.aspectRatio || '1:1'] || { width: 1024, height: 1024 };
+async function generateStabilityAIImage(
+  prompt: string,
+  apiKey: string,
+  model?: string,
+): Promise<ImageGenerationResult> {
+  const engineId = model || "stable-diffusion-xl-1024-v1-0";
 
-  const formData = new FormData();
-  formData.append('prompt', params.prompt);
-  if (params.negativePrompt) {
-    formData.append('negative_prompt', params.negativePrompt);
-  }
-  formData.append('width', dimensions.width.toString());
-  formData.append('height', dimensions.height.toString());
-  formData.append('samples', '1');
-
-  const response = await fetch(`https://api.stability.ai/v1/generation/${model}/text-to-image`, {
-    method: 'POST',
-    headers: {
-      'Authorization': `Bearer ${apiKey}`,
-      'Accept': 'application/json',
+  const response = await fetch(
+    `https://api.stability.ai/v1/generation/${engineId}/text-to-image`,
+    {
+      method: "POST",
+      headers: {
+        "Content-Type": "application/json",
+        Authorization: `Bearer ${apiKey}`,
+      },
+      body: JSON.stringify({
+        text_prompts: [{ text: prompt }],
+        cfg_scale: 7,
+        height: 1024,
+        width: 1024,
+        steps: 30,
+        samples: 1,
+      }),
     },
-    body: formData,
-  });
+  );
 
   if (!response.ok) {
-    const error = await response.json().catch(() => ({ message: 'Unknown error' }));
-    throw new Error(error.message || `Stability AI API error: ${response.status}`);
+    const errorData = await response.json().catch(() => ({}));
+    throw new Error(
+      errorData.message ||
+        `Stability AI API error: ${response.status} ${response.statusText}`,
+    );
   }
 
   const data = await response.json();
-  const base64Image = data.artifacts?.[0]?.base64;
-
-  if (!base64Image) {
-    throw new Error('No image data returned from Stability AI');
+  if (!data.artifacts?.[0]?.base64) {
+    throw new Error(
+      "No image data returned from Stability AI. The generation may have failed.",
+    );
   }
 
-  // Convert base64 to Uint8Array
-  const binaryString = atob(base64Image);
-  const imageData = new Uint8Array(binaryString.length);
-  for (let i = 0; i < binaryString.length; i++) {
-    imageData[i] = binaryString.charCodeAt(i);
-  }
-
-  // Create a blob URL for preview
-  const blob = new Blob([imageData], { type: 'image/png' });
+  const base64Image = data.artifacts[0].base64;
+  const imageBytes = Uint8Array.from(atob(base64Image), (c) => c.charCodeAt(0));
+  const blob = new Blob([imageBytes], { type: "image/png" });
   const imageUrl = URL.createObjectURL(blob);
 
-  return { imageUrl, imageData };
+  return { imageUrl, imageBytes };
 }
 
-/**
- * Generate an image using Replicate
- */
-async function generateWithReplicate(apiKey: string, params: ImageGenerationParams): Promise<ImageGenerationResult> {
-  const model = params.model || 'stability-ai/sdxl';
-  
-  // Start the prediction
-  const response = await fetch('https://api.replicate.com/v1/predictions', {
-    method: 'POST',
+async function generateReplicateImage(
+  prompt: string,
+  apiKey: string,
+  model?: string,
+): Promise<ImageGenerationResult> {
+  const selectedModel = model || "stability-ai/sdxl";
+
+  const response = await fetch("https://api.replicate.com/v1/predictions", {
+    method: "POST",
     headers: {
-      'Content-Type': 'application/json',
-      'Authorization': `Token ${apiKey}`,
+      "Content-Type": "application/json",
+      Authorization: `Token ${apiKey}`,
     },
     body: JSON.stringify({
-      version: model.includes('flux-schnell') 
-        ? 'black-forest-labs/flux-schnell' 
-        : 'stability-ai/sdxl:39ed52f2a78e934b3ba6e2a89f5b1c712de7dfea535525255b1aa35c5565e08b',
-      input: {
-        prompt: params.prompt,
-        negative_prompt: params.negativePrompt || '',
-      },
+      version: selectedModel,
+      input: { prompt },
     }),
   });
 
   if (!response.ok) {
-    const error = await response.json().catch(() => ({ detail: 'Unknown error' }));
-    throw new Error(error.detail || `Replicate API error: ${response.status}`);
+    const errorData = await response.json().catch(() => ({}));
+    throw new Error(
+      errorData.detail ||
+        `Replicate API error: ${response.status} ${response.statusText}`,
+    );
   }
 
-  let prediction = await response.json();
+  const prediction = await response.json();
+  const predictionUrl = prediction.urls?.get;
+
+  if (!predictionUrl) {
+    throw new Error(
+      "No prediction URL returned from Replicate. The generation may have failed.",
+    );
+  }
 
   // Poll for completion
-  while (prediction.status === 'starting' || prediction.status === 'processing') {
-    await new Promise(resolve => setTimeout(resolve, 1000));
-    
-    const pollResponse = await fetch(`https://api.replicate.com/v1/predictions/${prediction.id}`, {
-      headers: {
-        'Authorization': `Token ${apiKey}`,
-      },
+  let result = prediction;
+  while (result.status === "starting" || result.status === "processing") {
+    await new Promise((resolve) => setTimeout(resolve, 1000));
+    const pollResponse = await fetch(predictionUrl, {
+      headers: { Authorization: `Token ${apiKey}` },
     });
-    
-    if (!pollResponse.ok) {
-      throw new Error(`Replicate polling error: ${pollResponse.status}`);
-    }
-    
-    prediction = await pollResponse.json();
+    result = await pollResponse.json();
   }
 
-  if (prediction.status === 'failed') {
-    throw new Error(prediction.error || 'Image generation failed');
+  if (result.status === "failed") {
+    throw new Error(result.error || "Replicate generation failed");
   }
 
-  const imageUrl = prediction.output?.[0] || prediction.output;
-
-  if (!imageUrl) {
-    throw new Error('No image URL returned from Replicate');
+  if (!result.output?.[0]) {
+    throw new Error(
+      "No image URL returned from Replicate. The generation may have failed.",
+    );
   }
 
-  // Fetch the image data
-  const imageResponse = await fetch(imageUrl);
-  const imageBlob = await imageResponse.blob();
-  const imageData = new Uint8Array(await imageBlob.arrayBuffer());
-
-  return { imageUrl, imageData };
+  return { imageUrl: result.output[0] };
 }
 
-/**
- * Generate an image using Leonardo AI
- */
-async function generateWithLeonardoAI(apiKey: string, params: ImageGenerationParams): Promise<ImageGenerationResult> {
-  // Start generation
-  const response = await fetch('https://cloud.leonardo.ai/api/rest/v1/generations', {
-    method: 'POST',
-    headers: {
-      'Content-Type': 'application/json',
-      'Authorization': `Bearer ${apiKey}`,
+async function generateLeonardoAIImage(
+  prompt: string,
+  apiKey: string,
+  model?: string,
+): Promise<ImageGenerationResult> {
+  const response = await fetch(
+    "https://cloud.leonardo.ai/api/rest/v1/generations",
+    {
+      method: "POST",
+      headers: {
+        "Content-Type": "application/json",
+        Authorization: `Bearer ${apiKey}`,
+      },
+      body: JSON.stringify({
+        prompt,
+        modelId: model || "leonardo-diffusion-xl",
+        width: 1024,
+        height: 1024,
+        num_images: 1,
+      }),
     },
-    body: JSON.stringify({
-      prompt: params.prompt,
-      modelId: params.model || 'b24e16ff-06e3-43eb-8d33-4416c2d75876', // Leonardo Diffusion XL
-      width: 1024,
-      height: 1024,
-      num_images: 1,
-      presetStyle: params.style || 'LEONARDO',
-    }),
-  });
+  );
 
   if (!response.ok) {
-    const error = await response.json().catch(() => ({ error: 'Unknown error' }));
-    throw new Error(error.error || `Leonardo AI API error: ${response.status}`);
+    const errorData = await response.json().catch(() => ({}));
+    throw new Error(
+      errorData.error ||
+        `Leonardo AI API error: ${response.status} ${response.statusText}`,
+    );
   }
 
   const data = await response.json();
   const generationId = data.sdGenerationJob?.generationId;
 
   if (!generationId) {
-    throw new Error('No generation ID returned from Leonardo AI');
+    throw new Error(
+      "No generation ID returned from Leonardo AI. The generation may have failed.",
+    );
   }
 
   // Poll for completion
-  let imageUrl: string | null = null;
-  for (let i = 0; i < 60; i++) {
-    await new Promise(resolve => setTimeout(resolve, 2000));
-    
-    const pollResponse = await fetch(`https://cloud.leonardo.ai/api/rest/v1/generations/${generationId}`, {
-      headers: {
-        'Authorization': `Bearer ${apiKey}`,
+  let result: any = null;
+  for (let i = 0; i < 30; i++) {
+    await new Promise((resolve) => setTimeout(resolve, 2000));
+    const pollResponse = await fetch(
+      `https://cloud.leonardo.ai/api/rest/v1/generations/${generationId}`,
+      {
+        headers: { Authorization: `Bearer ${apiKey}` },
       },
-    });
-    
-    if (!pollResponse.ok) {
-      throw new Error(`Leonardo AI polling error: ${pollResponse.status}`);
-    }
-    
-    const pollData = await pollResponse.json();
-    
-    if (pollData.generations_by_pk?.status === 'COMPLETE') {
-      imageUrl = pollData.generations_by_pk?.generated_images?.[0]?.url;
+    );
+    result = await pollResponse.json();
+    if (result.generations_by_pk?.status === "COMPLETE") {
       break;
-    } else if (pollData.generations_by_pk?.status === 'FAILED') {
-      throw new Error('Image generation failed');
     }
   }
 
-  if (!imageUrl) {
-    throw new Error('Image generation timed out');
+  if (!result?.generations_by_pk?.generated_images?.[0]?.url) {
+    throw new Error(
+      "No image URL returned from Leonardo AI. The generation may have failed or timed out.",
+    );
   }
 
-  // Fetch the image data
-  const imageResponse = await fetch(imageUrl);
-  const imageBlob = await imageResponse.blob();
-  const imageData = new Uint8Array(await imageBlob.arrayBuffer());
-
-  return { imageUrl, imageData };
-}
-
-/**
- * Main image generation function that routes to the appropriate provider
- */
-export async function generateImage(
-  provider: string,
-  apiKey: string,
-  params: ImageGenerationParams
-): Promise<ImageGenerationResult> {
-  switch (provider) {
-    case 'openai':
-      return generateWithOpenAI(apiKey, params);
-    case 'fal-ai':
-      return generateWithFalAI(apiKey, params);
-    case 'stability-ai':
-      return generateWithStabilityAI(apiKey, params);
-    case 'replicate':
-      return generateWithReplicate(apiKey, params);
-    case 'leonardo-ai':
-      return generateWithLeonardoAI(apiKey, params);
-    default:
-      throw new Error(`Image generation not supported for provider: ${provider}`);
-  }
-}
-
-/**
- * Convert image data to a data URL for display
- */
-export function imageDataToDataURL(imageData: Uint8Array, mimeType: string = 'image/png'): string {
-  const blob = new Blob([imageData as BlobPart], { type: mimeType });
-  return URL.createObjectURL(blob);
+  return { imageUrl: result.generations_by_pk.generated_images[0].url };
 }

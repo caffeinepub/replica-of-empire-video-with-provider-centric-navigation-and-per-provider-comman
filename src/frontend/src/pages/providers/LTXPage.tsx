@@ -1,14 +1,14 @@
-import { useState } from 'react';
-import { getProviderById } from '@/providers/providers';
-import ProviderKeyManager from '@/components/keys/ProviderKeyManager';
-import ProviderActionGuard from '@/components/providers/ProviderActionGuard';
-import RecommendedPrompts from '@/components/providers/RecommendedPrompts';
-import { ProviderToolsOptionsSection } from '@/components/providers/ProviderToolsOptionsSection';
+import ProviderKeyManager from "@/components/keys/ProviderKeyManager";
+import ProviderActionGuard from "@/components/providers/ProviderActionGuard";
+import { ProviderToolsOptionsSection } from "@/components/providers/ProviderToolsOptionsSection";
+import RecommendedPrompts from "@/components/providers/RecommendedPrompts";
+import { getProviderById } from "@/providers/providers";
+import { useState } from "react";
 
 export default function LTXPage() {
-  const provider = getProviderById('ltx')!;
+  const provider = getProviderById("ltx")!;
   const Icon = provider.icon;
-  const [draftMessage, setDraftMessage] = useState('');
+  const [_draftMessage, setDraftMessage] = useState("");
 
   const handleSelectPrompt = (prompt: string) => {
     setDraftMessage(prompt);
@@ -21,22 +21,33 @@ export default function LTXPage() {
           <Icon className="h-6 w-6 text-primary sm:h-8 sm:w-8" />
         </div>
         <div>
-          <h1 className="text-2xl font-bold sm:text-3xl">{provider.displayName}</h1>
-          <p className="text-sm text-muted-foreground sm:text-base">{provider.description}</p>
+          <h1 className="text-2xl font-bold sm:text-3xl">
+            {provider.displayName}
+          </h1>
+          <p className="text-sm text-muted-foreground sm:text-base">
+            {provider.description}
+          </p>
         </div>
       </div>
 
-      <ProviderKeyManager providerId={provider.id} providerName={provider.displayName} />
+      <ProviderKeyManager
+        providerId={provider.id}
+        providerName={provider.displayName}
+      />
 
-      <ProviderActionGuard providerId={provider.id} providerName={provider.displayName}>
-        {provider.recommendedPrompts && provider.recommendedPrompts.length > 0 && (
-          <RecommendedPrompts
-            prompts={provider.recommendedPrompts}
-            onSelectPrompt={handleSelectPrompt}
-          />
-        )}
+      <ProviderActionGuard
+        providerId={provider.id}
+        providerName={provider.displayName}
+      >
+        {provider.recommendedPrompts &&
+          provider.recommendedPrompts.length > 0 && (
+            <RecommendedPrompts
+              prompts={provider.recommendedPrompts}
+              onSelectPrompt={handleSelectPrompt}
+            />
+          )}
         <ProviderToolsOptionsSection
-          provider={provider.id}
+          provider={provider.name}
           workflowType={provider.workflowType}
           optionFields={provider.optionFields}
         />

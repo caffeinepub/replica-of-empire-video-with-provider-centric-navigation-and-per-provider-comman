@@ -1,11 +1,14 @@
-import { Link, useRouterState } from '@tanstack/react-router';
-import { PROVIDERS } from '@/providers/providers';
-import { useResolvedProviderDisplayName } from '@/hooks/providers/useResolvedProviderDisplayName';
-import { Button } from '@/components/ui/button';
-import { ScrollArea } from '@/components/ui/scroll-area';
-import { Separator } from '@/components/ui/separator';
+import { Button } from "@/components/ui/button";
+import { ScrollArea } from "@/components/ui/scroll-area";
+import { Separator } from "@/components/ui/separator";
+import { useResolvedProviderDisplayName } from "@/hooks/providers/useResolvedProviderDisplayName";
+import { PROVIDERS } from "@/providers/providers";
+import { Link, useRouterState } from "@tanstack/react-router";
 
-function ProviderNavItem({ providerId, currentPath }: { providerId: string; currentPath: string }) {
+function ProviderNavItem({
+  providerId,
+  currentPath,
+}: { providerId: string; currentPath: string }) {
   const provider = PROVIDERS.find((p) => p.id === providerId);
   const displayName = useResolvedProviderDisplayName(providerId);
 
@@ -16,7 +19,7 @@ function ProviderNavItem({ providerId, currentPath }: { providerId: string; curr
 
   return (
     <Button
-      variant={isActive ? 'secondary' : 'ghost'}
+      variant={isActive ? "secondary" : "ghost"}
       className="w-full justify-start"
       asChild
     >
@@ -44,7 +47,11 @@ export default function ProviderNav() {
       <ScrollArea className="h-[calc(100vh-4rem)]">
         <div className="space-y-1 p-3">
           {PROVIDERS.map((provider) => (
-            <ProviderNavItem key={provider.id} providerId={provider.id} currentPath={currentPath} />
+            <ProviderNavItem
+              key={provider.id}
+              providerId={provider.id}
+              currentPath={currentPath}
+            />
           ))}
         </div>
         <Separator className="my-4" />

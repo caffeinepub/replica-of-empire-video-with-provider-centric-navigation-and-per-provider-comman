@@ -1,9 +1,16 @@
-import { Link } from '@tanstack/react-router';
-import { Key, Wrench, Brain, Link as LinkIcon, Shield, Menu as MenuIcon } from 'lucide-react';
-import { Button } from '@/components/ui/button';
-import LoginButton from '../auth/LoginButton';
-import MobileTopNavMenu from './MobileTopNavMenu';
-import PwaInstallPrompt from '../pwa/PwaInstallPrompt';
+import { Button } from "@/components/ui/button";
+import { Link } from "@tanstack/react-router";
+import {
+  Brain,
+  Key,
+  Link as LinkIcon,
+  Menu as MenuIcon,
+  Shield,
+  Wrench,
+} from "lucide-react";
+import LoginButton from "../auth/LoginButton";
+import PwaInstallPrompt from "../pwa/PwaInstallPrompt";
+import MobileTopNavMenu from "./MobileTopNavMenu";
 
 interface TopNavProps {
   onMobileProviderNavToggle: () => void;
@@ -25,12 +32,14 @@ export default function TopNav({ onMobileProviderNavToggle }: TopNavProps) {
           </Button>
 
           <Link to="/" className="flex items-center gap-2 sm:gap-3">
-            <img 
-              src="/assets/generated/app-logo.dim_512x512.png" 
-              alt="Empire C.C Logo" 
-              className="h-8 w-8 sm:h-10 sm:w-10 object-contain" 
+            <img
+              src="/assets/generated/app-logo.dim_512x512.png"
+              alt="Empire C.C Logo"
+              className="h-8 w-8 sm:h-10 sm:w-10 object-contain"
             />
-            <span className="text-base font-bold tracking-tight sm:text-xl">Empire C.C</span>
+            <span className="text-base font-bold tracking-tight sm:text-xl">
+              Empire C.C
+            </span>
           </Link>
 
           {/* Desktop navigation - hidden on mobile */}
@@ -71,7 +80,7 @@ export default function TopNav({ onMobileProviderNavToggle }: TopNavProps) {
         <div className="flex items-center gap-2">
           {/* PWA Install Prompt */}
           <PwaInstallPrompt />
-          
+
           {/* Mobile top nav menu */}
           <MobileTopNavMenu />
           <LoginButton />

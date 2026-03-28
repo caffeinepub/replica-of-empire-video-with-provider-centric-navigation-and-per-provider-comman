@@ -1,8 +1,26 @@
-import NotIntegratedCallout from '@/components/common/NotIntegratedCallout';
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
-import { Link as LinkIcon } from 'lucide-react';
+import LinkCard from "@/components/links/LinkCard";
+import LinkCreateForm from "@/components/links/LinkCreateForm";
+import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert";
+import { Button } from "@/components/ui/button";
+import {
+  Card,
+  CardContent,
+  CardDescription,
+  CardHeader,
+  CardTitle,
+} from "@/components/ui/card";
+import { useGetAllLinks } from "@/hooks/links/useLinks";
+import {
+  ExternalLink,
+  FileText,
+  Link as LinkIcon,
+  Loader2,
+} from "lucide-react";
+import { AlertCircle } from "lucide-react";
 
 export default function LinksDashboardPage() {
+  const { data: links, isLoading, error, refetch } = useGetAllLinks();
+
   return (
     <div className="container mx-auto space-y-6 px-4 py-6 sm:px-6">
       <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:gap-4">
@@ -11,22 +29,93 @@ export default function LinksDashboardPage() {
         </div>
         <div>
           <h1 className="text-2xl font-bold sm:text-3xl">Links Dashboard</h1>
-          <p className="text-sm text-muted-foreground sm:text-base">Manage your external links and integrations</p>
+          <p className="text-sm text-muted-foreground sm:text-base">
+            Manage your external links and integrations
+          </p>
         </div>
       </div>
 
-      <Card>
+      {/* Export Documentation Card */}
+      <Card className="border-amber-500/20 bg-amber-500/5">
         <CardHeader>
-          <CardTitle className="text-lg sm:text-xl">Link Management</CardTitle>
-          <CardDescription className="text-sm">Create, read, update, and delete external links</CardDescription>
+          <CardTitle className="flex items-center gap-2 text-base">
+            <FileText className="h-5 w-5 text-amber-500" />
+            Export Documentation
+          </CardTitle>
+          <CardDescription>
+            Learn how to deploy and configure this application
+          </CardDescription>
         </CardHeader>
         <CardContent>
-          <NotIntegratedCallout
-            feature="Links Dashboard"
-            description="CRUD operations for link management are planned for a future release."
-          />
+          <Button asChild variant="outline" size="sm" className="gap-2">
+            <a
+              href="/export/README.md"
+              target="_blank"
+              rel="noopener noreferrer"
+            >
+              <ExternalLink className="h-4 w-4" />
+              View Setup Guide
+            </a>
+          </Button>
         </CardContent>
       </Card>
+
+      <LinkCreateForm />
+
+      <div className="space-y-4">
+        <div>
+          <h2 className="text-xl font-semibold">Saved Links</h2>
+          <p className="text-sm text-muted-foreground">
+            Your collection of saved links
+          </p>
+        </div>
+
+        {isLoading && (
+          <div className="flex items-center justify-center py-12">
+            <Loader2 className="h-8 w-8 animate-spin text-muted-foreground" />
+          </div>
+        )}
+
+        {error && (
+          <Alert variant="destructive">
+            <AlertCircle className="h-4 w-4" />
+            <AlertTitle>Error</AlertTitle>
+            <AlertDescription>
+              Failed to load links. Please try again.
+              <button
+                type="button"
+                onClick={() => refetch()}
+                className="ml-2 underline hover:no-underline"
+              >
+                Retry
+              </button>
+            </AlertDescription>
+          </Alert>
+        )}
+
+        {!isLoading && !error && links && links.length === 0 && (
+          <Card>
+            <CardHeader>
+              <CardTitle>No Links Yet</CardTitle>
+              <CardDescription>
+                Create your first link using the form above to get started.
+              </CardDescription>
+            </CardHeader>
+          </Card>
+        )}
+
+        {!isLoading && !error && links && links.length > 0 && (
+          <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
+            {links.map((link, index) => (
+              <LinkCard
+                key={`link-${index}-${link.url.slice(0, 10)}`}
+                link={link}
+                index={index}
+              />
+            ))}
+          </div>
+        )}
+      </div>
     </div>
   );
 }

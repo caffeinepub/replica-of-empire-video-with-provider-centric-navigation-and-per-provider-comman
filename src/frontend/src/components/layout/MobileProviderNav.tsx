@@ -1,24 +1,29 @@
-import { Link } from '@tanstack/react-router';
-import { PROVIDERS } from '@/providers/providers';
-import { useResolvedProviderDisplayName } from '@/hooks/providers/useResolvedProviderDisplayName';
-import { Button } from '@/components/ui/button';
-import { Sheet, SheetContent, SheetHeader, SheetTitle } from '@/components/ui/sheet';
-import { ScrollArea } from '@/components/ui/scroll-area';
-import { Separator } from '@/components/ui/separator';
-import { useRouterState } from '@tanstack/react-router';
+import { Button } from "@/components/ui/button";
+import { ScrollArea } from "@/components/ui/scroll-area";
+import { Separator } from "@/components/ui/separator";
+import {
+  Sheet,
+  SheetContent,
+  SheetHeader,
+  SheetTitle,
+} from "@/components/ui/sheet";
+import { useResolvedProviderDisplayName } from "@/hooks/providers/useResolvedProviderDisplayName";
+import { PROVIDERS } from "@/providers/providers";
+import { Link } from "@tanstack/react-router";
+import { useRouterState } from "@tanstack/react-router";
 
 interface MobileProviderNavProps {
   open: boolean;
   onOpenChange: (open: boolean) => void;
 }
 
-function MobileProviderNavItem({ 
-  providerId, 
-  currentPath, 
-  onClose 
-}: { 
-  providerId: string; 
-  currentPath: string; 
+function MobileProviderNavItem({
+  providerId,
+  currentPath,
+  onClose,
+}: {
+  providerId: string;
+  currentPath: string;
   onClose: () => void;
 }) {
   const provider = PROVIDERS.find((p) => p.id === providerId);
@@ -31,7 +36,7 @@ function MobileProviderNavItem({
 
   return (
     <Button
-      variant={isActive ? 'secondary' : 'ghost'}
+      variant={isActive ? "secondary" : "ghost"}
       className="w-full justify-start"
       asChild
       onClick={onClose}
@@ -46,7 +51,10 @@ function MobileProviderNavItem({
   );
 }
 
-export default function MobileProviderNav({ open, onOpenChange }: MobileProviderNavProps) {
+export default function MobileProviderNav({
+  open,
+  onOpenChange,
+}: MobileProviderNavProps) {
   const router = useRouterState();
   const currentPath = router.location.pathname;
 
@@ -61,9 +69,9 @@ export default function MobileProviderNav({ open, onOpenChange }: MobileProvider
         <ScrollArea className="h-[calc(100vh-5rem)]">
           <div className="space-y-1 p-3">
             {PROVIDERS.map((provider) => (
-              <MobileProviderNavItem 
-                key={provider.id} 
-                providerId={provider.id} 
+              <MobileProviderNavItem
+                key={provider.id}
+                providerId={provider.id}
                 currentPath={currentPath}
                 onClose={() => onOpenChange(false)}
               />

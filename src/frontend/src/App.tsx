@@ -1,22 +1,30 @@
-import { RouterProvider, createRouter, createRoute, createRootRoute, Navigate, useParams } from '@tanstack/react-router';
-import { ThemeProvider } from 'next-themes';
-import AppShell from './components/layout/AppShell';
-import ProviderHubPage from './pages/ProviderHubPage';
-import OpenAIPage from './pages/providers/OpenAIPage';
-import LTXPage from './pages/providers/LTXPage';
-import ReplicatePage from './pages/providers/ReplicatePage';
-import RunPodPage from './pages/providers/RunPodPage';
-import SlackPage from './pages/providers/SlackPage';
-import GenericProviderPage from './pages/providers/GenericProviderPage';
-import CustomSlotProviderPage from './pages/providers/CustomSlotProviderPage';
-import KeyVaultPage from './pages/KeyVaultPage';
-import StudioToolsPage from './pages/StudioToolsPage';
-import MemoryBrainPage from './pages/MemoryBrainPage';
-import LinksDashboardPage from './pages/LinksDashboardPage';
-import AdminPanelPage from './pages/AdminPanelPage';
-import TermsPage from './pages/TermsPage';
-import AuthGate from './components/auth/AuthGate';
-import { Toaster } from '@/components/ui/sonner';
+import { Toaster } from "@/components/ui/sonner";
+import {
+  Navigate,
+  RouterProvider,
+  createRootRoute,
+  createRoute,
+  createRouter,
+  useParams,
+} from "@tanstack/react-router";
+import { ThemeProvider } from "next-themes";
+import AuthGate from "./components/auth/AuthGate";
+import AppShell from "./components/layout/AppShell";
+import AdminPanelPage from "./pages/AdminPanelPage";
+import KeyVaultPage from "./pages/KeyVaultPage";
+import LinksDashboardPage from "./pages/LinksDashboardPage";
+import MemoryBrainPage from "./pages/MemoryBrainPage";
+import ProviderHubPage from "./pages/ProviderHubPage";
+import StudioToolsPage from "./pages/StudioToolsPage";
+import TermsPage from "./pages/TermsPage";
+import CustomSlotProviderPage from "./pages/providers/CustomSlotProviderPage";
+import GenericProviderPage from "./pages/providers/GenericProviderPage";
+import LTXPage from "./pages/providers/LTXPage";
+import OpenAIPage from "./pages/providers/OpenAIPage";
+import ReplicatePage from "./pages/providers/ReplicatePage";
+import RunPodPage from "./pages/providers/RunPodPage";
+import SlackPage from "./pages/providers/SlackPage";
+import VeniceAIPage from "./pages/providers/VeniceAIPage";
 
 const rootRoute = createRootRoute({
   component: AppShell,
@@ -24,7 +32,7 @@ const rootRoute = createRootRoute({
 
 const indexRoute = createRoute({
   getParentRoute: () => rootRoute,
-  path: '/',
+  path: "/",
   component: () => (
     <AuthGate>
       <ProviderHubPage />
@@ -34,7 +42,7 @@ const indexRoute = createRoute({
 
 const openaiRoute = createRoute({
   getParentRoute: () => rootRoute,
-  path: '/providers/openai',
+  path: "/providers/openai",
   component: () => (
     <AuthGate>
       <OpenAIPage />
@@ -44,7 +52,7 @@ const openaiRoute = createRoute({
 
 const ltxRoute = createRoute({
   getParentRoute: () => rootRoute,
-  path: '/providers/ltx',
+  path: "/providers/ltx",
   component: () => (
     <AuthGate>
       <LTXPage />
@@ -54,7 +62,7 @@ const ltxRoute = createRoute({
 
 const replicateRoute = createRoute({
   getParentRoute: () => rootRoute,
-  path: '/providers/replicate',
+  path: "/providers/replicate",
   component: () => (
     <AuthGate>
       <ReplicatePage />
@@ -64,7 +72,7 @@ const replicateRoute = createRoute({
 
 const runpodRoute = createRoute({
   getParentRoute: () => rootRoute,
-  path: '/providers/runpod',
+  path: "/providers/runpod",
   component: () => (
     <AuthGate>
       <RunPodPage />
@@ -74,7 +82,7 @@ const runpodRoute = createRoute({
 
 const slackRoute = createRoute({
   getParentRoute: () => rootRoute,
-  path: '/providers/slack',
+  path: "/providers/slack",
   component: () => (
     <AuthGate>
       <SlackPage />
@@ -84,7 +92,7 @@ const slackRoute = createRoute({
 
 const customSlot1Route = createRoute({
   getParentRoute: () => rootRoute,
-  path: '/providers/custom-slot-1',
+  path: "/providers/custom-slot-1",
   component: () => (
     <AuthGate>
       <CustomSlotProviderPage providerId="custom-slot-1" />
@@ -94,7 +102,7 @@ const customSlot1Route = createRoute({
 
 const customSlot2Route = createRoute({
   getParentRoute: () => rootRoute,
-  path: '/providers/custom-slot-2',
+  path: "/providers/custom-slot-2",
   component: () => (
     <AuthGate>
       <CustomSlotProviderPage providerId="custom-slot-2" />
@@ -102,9 +110,19 @@ const customSlot2Route = createRoute({
   ),
 });
 
+const veniceAiRoute = createRoute({
+  getParentRoute: () => rootRoute,
+  path: "/providers/venice-ai",
+  component: () => (
+    <AuthGate>
+      <VeniceAIPage />
+    </AuthGate>
+  ),
+});
+
 const falAiRoute = createRoute({
   getParentRoute: () => rootRoute,
-  path: '/providers/fal-ai',
+  path: "/providers/fal-ai",
   component: () => (
     <AuthGate>
       <GenericProviderPage providerId="fal-ai" />
@@ -114,7 +132,7 @@ const falAiRoute = createRoute({
 
 const falAliasRoute = createRoute({
   getParentRoute: () => rootRoute,
-  path: '/providers/fal',
+  path: "/providers/fal",
   component: () => (
     <AuthGate>
       <GenericProviderPage providerId="fal-ai" />
@@ -123,7 +141,7 @@ const falAliasRoute = createRoute({
 });
 
 function GenericProviderRouteComponent() {
-  const { providerId } = useParams({ from: '/providers/$providerId' });
+  const { providerId } = useParams({ from: "/providers/$providerId" });
   return (
     <AuthGate>
       <GenericProviderPage providerId={providerId} />
@@ -133,13 +151,13 @@ function GenericProviderRouteComponent() {
 
 const genericProviderRoute = createRoute({
   getParentRoute: () => rootRoute,
-  path: '/providers/$providerId',
+  path: "/providers/$providerId",
   component: GenericProviderRouteComponent,
 });
 
 const keyVaultRoute = createRoute({
   getParentRoute: () => rootRoute,
-  path: '/vault',
+  path: "/vault",
   component: () => (
     <AuthGate>
       <KeyVaultPage />
@@ -149,7 +167,7 @@ const keyVaultRoute = createRoute({
 
 const studioRoute = createRoute({
   getParentRoute: () => rootRoute,
-  path: '/studio',
+  path: "/studio",
   component: () => (
     <AuthGate>
       <StudioToolsPage />
@@ -159,7 +177,7 @@ const studioRoute = createRoute({
 
 const memoryRoute = createRoute({
   getParentRoute: () => rootRoute,
-  path: '/memory',
+  path: "/memory",
   component: () => (
     <AuthGate>
       <MemoryBrainPage />
@@ -169,7 +187,7 @@ const memoryRoute = createRoute({
 
 const linksRoute = createRoute({
   getParentRoute: () => rootRoute,
-  path: '/links',
+  path: "/links",
   component: () => (
     <AuthGate>
       <LinksDashboardPage />
@@ -179,7 +197,7 @@ const linksRoute = createRoute({
 
 const adminRoute = createRoute({
   getParentRoute: () => rootRoute,
-  path: '/admin',
+  path: "/admin",
   component: () => (
     <AuthGate>
       <AdminPanelPage />
@@ -189,12 +207,13 @@ const adminRoute = createRoute({
 
 const termsRoute = createRoute({
   getParentRoute: () => rootRoute,
-  path: '/terms',
+  path: "/terms",
   component: TermsPage,
 });
 
 const routeTree = rootRoute.addChildren([
   indexRoute,
+  veniceAiRoute,
   openaiRoute,
   ltxRoute,
   replicateRoute,
@@ -215,7 +234,7 @@ const routeTree = rootRoute.addChildren([
 
 const router = createRouter({ routeTree });
 
-declare module '@tanstack/react-router' {
+declare module "@tanstack/react-router" {
   interface Register {
     router: typeof router;
   }

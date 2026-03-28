@@ -1,9 +1,9 @@
 import Map "mo:core/Map";
 import Array "mo:core/Array";
-import Text "mo:core/Text";
 import List "mo:core/List";
-import Iter "mo:core/Iter";
+import Text "mo:core/Text";
 import Time "mo:core/Time";
+import Iter "mo:core/Iter";
 import Order "mo:core/Order";
 import Runtime "mo:core/Runtime";
 import Principal "mo:core/Principal";
@@ -51,6 +51,90 @@ actor {
   let userProfiles = Map.empty<Principal, UserProfile>();
   let providers = Map.empty<Text, ProviderInfo>();
   let customProviderMetadata = Map.empty<Principal, Map.Map<Text, CustomProviderMetadata>>();
+
+  // Link Management
+  public type Link = {
+    description : Text;
+    url : Text;
+  };
+
+  let userLinks = Map.empty<Principal, List.List<Link>>();
+
+  // Link CRUD Operations
+  public shared ({ caller }) func addLink(link : Link) : async () {
+    if (not (AccessControl.hasPermission(accessControlState, caller, #user))) {
+      Runtime.trap("Unauthorized: Only users can add links");
+    };
+
+    let links = switch (userLinks.get(caller)) {
+      case (?existingLinks) { existingLinks };
+      case (null) {
+        let newList = List.empty<Link>();
+        userLinks.add(caller, newList);
+        newList;
+      };
+    };
+
+    links.add(link);
+  };
+
+  public shared ({ caller }) func updateLink(index : Nat, newLink : Link) : async () {
+    if (not (AccessControl.hasPermission(accessControlState, caller, #user))) {
+      Runtime.trap("Unauthorized: Only users can update links");
+    };
+
+    switch (userLinks.get(caller)) {
+      case (?links) {
+        if (index >= links.size()) {
+          Runtime.trap("Link could not be updated. Some was this is probably impossible.");
+        };
+        let updatedLinks = links.enumerate().map(
+          func((i, entry)) {
+            if (i == index) { newLink } else { entry };
+          }
+        );
+        userLinks.add(caller, List.fromArray<Link>(updatedLinks.toArray()));
+      };
+      case (null) {
+        Runtime.trap("Link could not be updated. Some was this is probably impossible.");
+      };
+    };
+  };
+
+  public shared ({ caller }) func deleteLink(index : Nat) : async () {
+    if (not (AccessControl.hasPermission(accessControlState, caller, #user))) {
+      Runtime.trap("Unauthorized: Only users can delete links");
+    };
+
+    switch (userLinks.get(caller)) {
+      case (?links) {
+        if (index >= links.size()) {
+          Runtime.trap("Link could not be deleted. Some was this is probably impossible.");
+        };
+        let filteredLinks = links.enumerate().filter(
+          func((i, _)) { i != index }
+        );
+        let mappedLinks = filteredLinks.map(
+          func((_, link)) { link }
+        );
+        userLinks.add(caller, List.fromArray<Link>(mappedLinks.toArray()));
+      };
+      case (null) {
+        Runtime.trap("Link could not be deleted. Some was this is probably impossible.");
+      };
+    };
+  };
+
+  public query ({ caller }) func getAllLinks() : async [Link] {
+    if (not (AccessControl.hasPermission(accessControlState, caller, #user))) {
+      Runtime.trap("Unauthorized: Only users can get links");
+    };
+
+    switch (userLinks.get(caller)) {
+      case (?links) { links.toArray() };
+      case (null) { [] };
+    };
+  };
 
   // Initialize Providers
   public shared ({ caller }) func initializeProviders(providerList : [ProviderInfo]) : async () {

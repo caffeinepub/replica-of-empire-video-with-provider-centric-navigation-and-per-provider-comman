@@ -19,6 +19,7 @@ export const _CaffeineStorageRefillResult = IDL.Record({
   'success' : IDL.Opt(IDL.Bool),
   'topped_up_amount' : IDL.Opt(IDL.Nat),
 });
+export const Link = IDL.Record({ 'url' : IDL.Text, 'description' : IDL.Text });
 export const UserRole = IDL.Variant({
   'admin' : IDL.Null,
   'user' : IDL.Null,
@@ -92,11 +93,13 @@ export const idlService = IDL.Service({
   '_caffeineStorageUpdateGatewayPrincipals' : IDL.Func([], [], []),
   '_initializeAccessControlWithSecret' : IDL.Func([IDL.Text], [], []),
   'addChatMessage' : IDL.Func([IDL.Text, IDL.Text], [], []),
+  'addLink' : IDL.Func([Link], [], []),
   'addOrUpdateAPIKey' : IDL.Func([IDL.Text, IDL.Text], [], []),
   'assignCallerUserRole' : IDL.Func([IDL.Principal, UserRole], [], []),
   'cancelPendingWorkflowRunsForProvider' : IDL.Func([IDL.Text], [], []),
   'cancelWorkflowRun' : IDL.Func([IDL.Text], [], []),
   'customProviderMetadataExists' : IDL.Func([IDL.Text], [IDL.Bool], ['query']),
+  'deleteLink' : IDL.Func([IDL.Nat], [], []),
   'executeWorkflow' : IDL.Func(
       [IDL.Text, IDL.Text, IDL.Text],
       [WorkflowRun],
@@ -112,6 +115,7 @@ export const idlService = IDL.Service({
       [IDL.Vec(CustomProviderMetadata)],
       ['query'],
     ),
+  'getAllLinks' : IDL.Func([], [IDL.Vec(Link)], ['query']),
   'getAllProviders' : IDL.Func([], [IDL.Vec(ProviderInfo)], ['query']),
   'getAllUsersCustomProviderMetadata' : IDL.Func(
       [],
@@ -144,6 +148,7 @@ export const idlService = IDL.Service({
       [IDL.Vec(ChatMessage)],
       ['query'],
     ),
+  'updateLink' : IDL.Func([IDL.Nat, Link], [], []),
   'updateWorkflowRun' : IDL.Func(
       [IDL.Text, WorkflowRunStatus, IDL.Opt(IDL.Text), IDL.Opt(IDL.Int)],
       [WorkflowRun],
@@ -165,6 +170,7 @@ export const idlFactory = ({ IDL }) => {
     'success' : IDL.Opt(IDL.Bool),
     'topped_up_amount' : IDL.Opt(IDL.Nat),
   });
+  const Link = IDL.Record({ 'url' : IDL.Text, 'description' : IDL.Text });
   const UserRole = IDL.Variant({
     'admin' : IDL.Null,
     'user' : IDL.Null,
@@ -238,6 +244,7 @@ export const idlFactory = ({ IDL }) => {
     '_caffeineStorageUpdateGatewayPrincipals' : IDL.Func([], [], []),
     '_initializeAccessControlWithSecret' : IDL.Func([IDL.Text], [], []),
     'addChatMessage' : IDL.Func([IDL.Text, IDL.Text], [], []),
+    'addLink' : IDL.Func([Link], [], []),
     'addOrUpdateAPIKey' : IDL.Func([IDL.Text, IDL.Text], [], []),
     'assignCallerUserRole' : IDL.Func([IDL.Principal, UserRole], [], []),
     'cancelPendingWorkflowRunsForProvider' : IDL.Func([IDL.Text], [], []),
@@ -247,6 +254,7 @@ export const idlFactory = ({ IDL }) => {
         [IDL.Bool],
         ['query'],
       ),
+    'deleteLink' : IDL.Func([IDL.Nat], [], []),
     'executeWorkflow' : IDL.Func(
         [IDL.Text, IDL.Text, IDL.Text],
         [WorkflowRun],
@@ -262,6 +270,7 @@ export const idlFactory = ({ IDL }) => {
         [IDL.Vec(CustomProviderMetadata)],
         ['query'],
       ),
+    'getAllLinks' : IDL.Func([], [IDL.Vec(Link)], ['query']),
     'getAllProviders' : IDL.Func([], [IDL.Vec(ProviderInfo)], ['query']),
     'getAllUsersCustomProviderMetadata' : IDL.Func(
         [],
@@ -294,6 +303,7 @@ export const idlFactory = ({ IDL }) => {
         [IDL.Vec(ChatMessage)],
         ['query'],
       ),
+    'updateLink' : IDL.Func([IDL.Nat, Link], [], []),
     'updateWorkflowRun' : IDL.Func(
         [IDL.Text, WorkflowRunStatus, IDL.Opt(IDL.Text), IDL.Opt(IDL.Int)],
         [WorkflowRun],

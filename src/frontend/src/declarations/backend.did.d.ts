@@ -23,6 +23,7 @@ export interface ChatMessage {
   'timestamp' : Time,
 }
 export interface CustomProviderMetadata { 'displayName' : string }
+export interface Link { 'url' : string, 'description' : string }
 export interface ProviderInfo {
   'documentationLink' : string,
   'name' : string,
@@ -78,17 +79,20 @@ export interface _SERVICE {
   '_caffeineStorageUpdateGatewayPrincipals' : ActorMethod<[], undefined>,
   '_initializeAccessControlWithSecret' : ActorMethod<[string], undefined>,
   'addChatMessage' : ActorMethod<[string, string], undefined>,
+  'addLink' : ActorMethod<[Link], undefined>,
   'addOrUpdateAPIKey' : ActorMethod<[string, string], undefined>,
   'assignCallerUserRole' : ActorMethod<[Principal, UserRole], undefined>,
   'cancelPendingWorkflowRunsForProvider' : ActorMethod<[string], undefined>,
   'cancelWorkflowRun' : ActorMethod<[string], undefined>,
   'customProviderMetadataExists' : ActorMethod<[string], boolean>,
+  'deleteLink' : ActorMethod<[bigint], undefined>,
   'executeWorkflow' : ActorMethod<[string, string, string], WorkflowRun>,
   'getAllAPIKeys' : ActorMethod<[], Array<[Principal, Array<APIKey>]>>,
   'getAllCustomProviderMetadata' : ActorMethod<
     [],
     Array<CustomProviderMetadata>
   >,
+  'getAllLinks' : ActorMethod<[], Array<Link>>,
   'getAllProviders' : ActorMethod<[], Array<ProviderInfo>>,
   'getAllUsersCustomProviderMetadata' : ActorMethod<
     [],
@@ -111,6 +115,7 @@ export interface _SERVICE {
   'saveCallerUserProfile' : ActorMethod<[UserProfile], undefined>,
   'setCustomProviderMetadata' : ActorMethod<[string, string], undefined>,
   'streamChatMessages' : ActorMethod<[string, bigint], Array<ChatMessage>>,
+  'updateLink' : ActorMethod<[bigint, Link], undefined>,
   'updateWorkflowRun' : ActorMethod<
     [string, WorkflowRunStatus, [] | [string], [] | [bigint]],
     WorkflowRun

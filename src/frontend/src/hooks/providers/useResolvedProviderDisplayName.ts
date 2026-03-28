@@ -1,5 +1,5 @@
-import { getProviderById } from '@/providers/providers';
-import { useCustomProviderMetadata } from './useCustomProviderMetadata';
+import { getProviderById } from "@/providers/providers";
+import { useCustomProviderMetadata } from "./useCustomProviderMetadata";
 
 export function useResolvedProviderDisplayName(providerId: string): string {
   const provider = getProviderById(providerId);

@@ -142,6 +142,10 @@ export interface _CaffeineStorageCreateCertificateResult {
     method: string;
     blob_hash: string;
 }
+export interface Link {
+    url: string;
+    description: string;
+}
 export interface UserProfile {
     name: string;
 }
@@ -163,14 +167,17 @@ export interface backendInterface {
     _caffeineStorageUpdateGatewayPrincipals(): Promise<void>;
     _initializeAccessControlWithSecret(userSecret: string): Promise<void>;
     addChatMessage(provider: string, content: string): Promise<void>;
+    addLink(link: Link): Promise<void>;
     addOrUpdateAPIKey(provider: string, key: string): Promise<void>;
     assignCallerUserRole(user: Principal, role: UserRole): Promise<void>;
     cancelPendingWorkflowRunsForProvider(provider: string): Promise<void>;
     cancelWorkflowRun(runId: string): Promise<void>;
     customProviderMetadataExists(providerKey: string): Promise<boolean>;
+    deleteLink(index: bigint): Promise<void>;
     executeWorkflow(provider: string, workflowType: string, inputs: string): Promise<WorkflowRun>;
     getAllAPIKeys(): Promise<Array<[Principal, Array<APIKey>]>>;
     getAllCustomProviderMetadata(): Promise<Array<CustomProviderMetadata>>;
+    getAllLinks(): Promise<Array<Link>>;
     getAllProviders(): Promise<Array<ProviderInfo>>;
     getAllUsersCustomProviderMetadata(): Promise<Array<[Principal, Array<CustomProviderMetadata>]>>;
     getCallerUserProfile(): Promise<UserProfile | null>;
@@ -187,6 +194,7 @@ export interface backendInterface {
     saveCallerUserProfile(profile: UserProfile): Promise<void>;
     setCustomProviderMetadata(providerKey: string, displayName: string): Promise<void>;
     streamChatMessages(provider: string, limit: bigint): Promise<Array<ChatMessage>>;
+    updateLink(index: bigint, newLink: Link): Promise<void>;
     updateWorkflowRun(runId: string, status: WorkflowRunStatus, outputBlobId: string | null, durationNanos: bigint | null): Promise<WorkflowRun>;
 }
 import type { APIKey as _APIKey, CustomProviderMetadata as _CustomProviderMetadata, Time as _Time, UserProfile as _UserProfile, UserRole as _UserRole, WorkflowRun as _WorkflowRun, WorkflowRunStatus as _WorkflowRunStatus, _CaffeineStorageRefillInformation as __CaffeineStorageRefillInformation, _CaffeineStorageRefillResult as __CaffeineStorageRefillResult } from "./declarations/backend.did.d.ts";
@@ -304,6 +312,20 @@ export class Backend implements backendInterface {
             return result;
         }
     }
+    async addLink(arg0: Link): Promise<void> {
+        if (this.processError) {
+            try {
+                const result = await this.actor.addLink(arg0);
+                return result;
+            } catch (e) {
+                this.processError(e);
+                throw new Error("unreachable");
+            }
+        } else {
+            const result = await this.actor.addLink(arg0);
+            return result;
+        }
+    }
     async addOrUpdateAPIKey(arg0: string, arg1: string): Promise<void> {
         if (this.processError) {
             try {
@@ -374,6 +396,20 @@ export class Backend implements backendInterface {
             return result;
         }
     }
+    async deleteLink(arg0: bigint): Promise<void> {
+        if (this.processError) {
+            try {
+                const result = await this.actor.deleteLink(arg0);
+                return result;
+            } catch (e) {
+                this.processError(e);
+                throw new Error("unreachable");
+            }
+        } else {
+            const result = await this.actor.deleteLink(arg0);
+            return result;
+        }
+    }
     async executeWorkflow(arg0: string, arg1: string, arg2: string): Promise<WorkflowRun> {
         if (this.processError) {
             try {
@@ -413,6 +449,20 @@ export class Backend implements backendInterface {
             }
         } else {
             const result = await this.actor.getAllCustomProviderMetadata();
+            return result;
+        }
+    }
+    async getAllLinks(): Promise<Array<Link>> {
+        if (this.processError) {
+            try {
+                const result = await this.actor.getAllLinks();
+                return result;
+            } catch (e) {
+                this.processError(e);
+                throw new Error("unreachable");
+            }
+        } else {
+            const result = await this.actor.getAllLinks();
             return result;
         }
     }
@@ -637,6 +687,20 @@ export class Backend implements backendInterface {
             }
         } else {
             const result = await this.actor.streamChatMessages(arg0, arg1);
+            return result;
+        }
+    }
+    async updateLink(arg0: bigint, arg1: Link): Promise<void> {
+        if (this.processError) {
+            try {
+                const result = await this.actor.updateLink(arg0, arg1);
+                return result;
+            } catch (e) {
+                this.processError(e);
+                throw new Error("unreachable");
+            }
+        } else {
+            const result = await this.actor.updateLink(arg0, arg1);
             return result;
         }
     }

@@ -1,14 +1,23 @@
-import { useState } from 'react';
-import { useProviderKey, useSaveProviderKey } from '@/hooks/keys/useProviderKey';
-import { useBackendActor } from '@/hooks/useBackendActor';
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
-import { Button } from '@/components/ui/button';
-import { Input } from '@/components/ui/input';
-import { Label } from '@/components/ui/label';
-import { Alert, AlertDescription } from '@/components/ui/alert';
-import { Key, Check, Loader2 } from 'lucide-react';
-import { toast } from 'sonner';
-import BackendConnectionAlert from '@/components/common/BackendConnectionAlert';
+import BackendConnectionAlert from "@/components/common/BackendConnectionAlert";
+import { Alert, AlertDescription } from "@/components/ui/alert";
+import { Button } from "@/components/ui/button";
+import {
+  Card,
+  CardContent,
+  CardDescription,
+  CardHeader,
+  CardTitle,
+} from "@/components/ui/card";
+import { Input } from "@/components/ui/input";
+import { Label } from "@/components/ui/label";
+import {
+  useProviderKey,
+  useSaveProviderKey,
+} from "@/hooks/keys/useProviderKey";
+import { useBackendActor } from "@/hooks/useBackendActor";
+import { Check, Key, Loader2 } from "lucide-react";
+import { useState } from "react";
+import { toast } from "sonner";
 
 interface ProviderKeyManagerProps {
   providerId: string;
@@ -17,16 +26,16 @@ interface ProviderKeyManagerProps {
   credentialPlaceholder?: string;
 }
 
-export default function ProviderKeyManager({ 
-  providerId, 
+export default function ProviderKeyManager({
+  providerId,
   providerName,
-  credentialLabel = 'API Key',
-  credentialPlaceholder = 'Enter your API key'
+  credentialLabel = "API Key",
+  credentialPlaceholder = "Enter your API key",
 }: ProviderKeyManagerProps) {
   const { isConnecting, isReady, error, retry } = useBackendActor();
   const { data: keyExists, isLoading } = useProviderKey(providerId);
   const { mutate: saveKey, isPending } = useSaveProviderKey();
-  const [apiKey, setApiKey] = useState('');
+  const [apiKey, setApiKey] = useState("");
   const [isEditing, setIsEditing] = useState(false);
   const [isRetrying, setIsRetrying] = useState(false);
 
@@ -41,27 +50,28 @@ export default function ProviderKeyManager({
       toast.error(`${credentialLabel} must be at least 10 characters long`);
       return;
     }
-    
+
     if (!isReady) {
-      toast.error('Still connecting to the backend. Please wait a moment.');
+      toast.error("Still connecting to the backend. Please wait a moment.");
       return;
     }
-    
+
     saveKey(
       { provider: providerId, key: apiKey.trim() },
       {
         onSuccess: () => {
           toast.success(`${credentialLabel} saved successfully`);
-          setApiKey('');
+          setApiKey("");
           setIsEditing(false);
         },
         onError: (error: any) => {
           // Error is already user-friendly from the hook
-          const errorMessage = error.message || `Failed to save ${credentialLabel}`;
+          const errorMessage =
+            error.message || `Failed to save ${credentialLabel}`;
           toast.error(errorMessage);
           // Keep input editable so user can retry
         },
-      }
+      },
     );
   };
 
@@ -76,8 +86,8 @@ export default function ProviderKeyManager({
           </CardTitle>
         </CardHeader>
         <CardContent>
-          <BackendConnectionAlert 
-            error={error} 
+          <BackendConnectionAlert
+            error={error}
             onRetry={handleRetry}
             isRetrying={isRetrying}
           />
@@ -99,7 +109,7 @@ export default function ProviderKeyManager({
         <CardContent>
           <div className="flex items-center gap-2 text-sm text-muted-foreground">
             <Loader2 className="h-4 w-4 animate-spin" />
-            {isConnecting ? 'Connecting to backend...' : 'Loading...'}
+            {isConnecting ? "Connecting to backend..." : "Loading..."}
           </div>
         </CardContent>
       </Card>
@@ -125,7 +135,12 @@ export default function ProviderKeyManager({
             <Check className="h-4 w-4" />
             <AlertDescription className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
               <span>{credentialLabel} is configured</span>
-              <Button variant="outline" size="sm" onClick={() => setIsEditing(true)} className="w-full sm:w-auto">
+              <Button
+                variant="outline"
+                size="sm"
+                onClick={() => setIsEditing(true)}
+                className="w-full sm:w-auto"
+              >
                 Update {credentialLabel}
               </Button>
             </AlertDescription>
@@ -146,14 +161,15 @@ export default function ProviderKeyManager({
             {!isReady && (
               <Alert>
                 <AlertDescription className="text-sm">
-                  Still connecting to the backend. Please wait a moment before saving.
+                  Still connecting to the backend. Please wait a moment before
+                  saving.
                 </AlertDescription>
               </Alert>
             )}
             <div className="flex flex-col gap-2 sm:flex-row">
-              <Button 
-                onClick={handleSave} 
-                disabled={isPending || !apiKey.trim() || !isReady} 
+              <Button
+                onClick={handleSave}
+                disabled={isPending || !apiKey.trim() || !isReady}
                 className="w-full sm:w-auto"
               >
                 {isPending ? (
@@ -170,7 +186,7 @@ export default function ProviderKeyManager({
                   variant="outline"
                   onClick={() => {
                     setIsEditing(false);
-                    setApiKey('');
+                    setApiKey("");
                   }}
                   disabled={isPending}
                   className="w-full sm:w-auto"

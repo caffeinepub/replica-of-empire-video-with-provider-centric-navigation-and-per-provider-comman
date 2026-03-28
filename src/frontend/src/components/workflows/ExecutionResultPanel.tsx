@@ -1,24 +1,27 @@
-import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
-import { Alert, AlertDescription } from '@/components/ui/alert';
-import { CheckCircle, XCircle, Loader2, Clock } from 'lucide-react';
-import { Button } from '@/components/ui/button';
-import type { WorkflowRun } from '@/backend';
+import type { WorkflowRun } from "@/backend";
+import { Alert, AlertDescription } from "@/components/ui/alert";
+import { Button } from "@/components/ui/button";
+import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
+import { CheckCircle, Clock, Loader2, XCircle } from "lucide-react";
 
 interface ExecutionResultPanelProps {
   run: WorkflowRun;
   onReuse?: () => void;
 }
 
-export default function ExecutionResultPanel({ run, onReuse }: ExecutionResultPanelProps) {
-  const isPending = run.status.__kind__ === 'pending';
-  const isRunning = run.status.__kind__ === 'running';
-  const isSuccess = run.status.__kind__ === 'success';
-  const isFailed = run.status.__kind__ === 'failed';
+export default function ExecutionResultPanel({
+  run,
+  onReuse,
+}: ExecutionResultPanelProps) {
+  const isPending = run.status.__kind__ === "pending";
+  const isRunning = run.status.__kind__ === "running";
+  const isSuccess = run.status.__kind__ === "success";
+  const isFailed = run.status.__kind__ === "failed";
 
   let inputs: Record<string, any> = {};
   try {
     inputs = JSON.parse(run.inputs);
-  } catch (e) {
+  } catch (_e) {
     // Ignore parse errors
   }
 
@@ -65,16 +68,16 @@ export default function ExecutionResultPanel({ run, onReuse }: ExecutionResultPa
         {isFailed && (
           <Alert variant="destructive">
             <AlertDescription>
-              {run.status.__kind__ === 'failed' ? run.status.failed : 'An error occurred during execution.'}
+              {run.status.__kind__ === "failed"
+                ? run.status.failed
+                : "An error occurred during execution."}
             </AlertDescription>
           </Alert>
         )}
 
         {isSuccess && (
           <Alert>
-            <AlertDescription>
-              Workflow executed successfully.
-            </AlertDescription>
+            <AlertDescription>Workflow executed successfully.</AlertDescription>
           </Alert>
         )}
 
@@ -87,8 +90,8 @@ export default function ExecutionResultPanel({ run, onReuse }: ExecutionResultPa
                 <div key={key} className="flex gap-2">
                   <span className="font-medium">{key}:</span>
                   <span className="text-muted-foreground truncate">
-                    {typeof value === 'string' && value.length > 100
-                      ? value.substring(0, 100) + '...'
+                    {typeof value === "string" && value.length > 100
+                      ? `${value.substring(0, 100)}...`
                       : String(value)}
                   </span>
                 </div>
@@ -100,9 +103,14 @@ export default function ExecutionResultPanel({ run, onReuse }: ExecutionResultPa
         {/* Metadata */}
         <div className="text-sm text-muted-foreground space-y-1">
           <p>Run ID: {run.id}</p>
-          <p>Created: {new Date(Number(run.timestamp) / 1000000).toLocaleString()}</p>
+          <p>
+            Created:{" "}
+            {new Date(Number(run.timestamp) / 1000000).toLocaleString()}
+          </p>
           {run.durationNanos && (
-            <p>Duration: {(Number(run.durationNanos) / 1000000000).toFixed(2)}s</p>
+            <p>
+              Duration: {(Number(run.durationNanos) / 1000000000).toFixed(2)}s
+            </p>
           )}
         </div>
 

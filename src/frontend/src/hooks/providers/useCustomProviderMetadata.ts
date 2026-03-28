@@ -1,12 +1,12 @@
-import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
-import { useActor } from '../useActor';
-import type { CustomProviderMetadata } from '@/backend';
+import type { CustomProviderMetadata } from "@/backend";
+import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
+import { useActor } from "../useActor";
 
 export function useCustomProviderMetadata(providerKey: string) {
   const { actor, isFetching: actorFetching } = useActor();
 
   return useQuery<CustomProviderMetadata | null>({
-    queryKey: ['customProviderMetadata', providerKey],
+    queryKey: ["customProviderMetadata", providerKey],
     queryFn: async () => {
       if (!actor) return null;
       return actor.getCustomProviderMetadata(providerKey);
@@ -20,13 +20,18 @@ export function useSaveCustomProviderMetadata() {
   const queryClient = useQueryClient();
 
   return useMutation({
-    mutationFn: async ({ providerKey, displayName }: { providerKey: string; displayName: string }) => {
-      if (!actor) throw new Error('Actor not available');
+    mutationFn: async ({
+      providerKey,
+      displayName,
+    }: { providerKey: string; displayName: string }) => {
+      if (!actor) throw new Error("Actor not available");
       await actor.setCustomProviderMetadata(providerKey, displayName);
     },
     onSuccess: (_, variables) => {
-      queryClient.invalidateQueries({ queryKey: ['customProviderMetadata', variables.providerKey] });
-      queryClient.invalidateQueries({ queryKey: ['customProviderMetadata'] });
+      queryClient.invalidateQueries({
+        queryKey: ["customProviderMetadata", variables.providerKey],
+      });
+      queryClient.invalidateQueries({ queryKey: ["customProviderMetadata"] });
     },
   });
 }

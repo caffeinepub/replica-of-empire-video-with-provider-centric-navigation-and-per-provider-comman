@@ -4,7 +4,7 @@
 export async function shareArtifact(
   url: string,
   title: string,
-  text?: string
+  text?: string,
 ): Promise<{ success: boolean; message: string }> {
   // Check if Web Share API is available
   if (navigator.share) {
@@ -14,13 +14,13 @@ export async function shareArtifact(
         text: text || title,
         url,
       });
-      return { success: true, message: 'Shared successfully' };
+      return { success: true, message: "Shared successfully" };
     } catch (error: any) {
       // User cancelled the share
-      if (error.name === 'AbortError') {
-        return { success: false, message: 'Share cancelled' };
+      if (error.name === "AbortError") {
+        return { success: false, message: "Share cancelled" };
       }
-      console.error('Share failed:', error);
+      console.error("Share failed:", error);
       // Fall through to clipboard fallback
     }
   }
@@ -28,15 +28,16 @@ export async function shareArtifact(
   // Fallback: Copy link to clipboard
   try {
     await navigator.clipboard.writeText(url);
-    return { 
-      success: true, 
-      message: 'Link copied to clipboard. You can now paste it anywhere to share.' 
+    return {
+      success: true,
+      message:
+        "Link copied to clipboard. You can now paste it anywhere to share.",
     };
   } catch (error) {
-    console.error('Clipboard copy failed:', error);
-    return { 
-      success: false, 
-      message: 'Unable to share. Please copy the link manually: ' + url 
+    console.error("Clipboard copy failed:", error);
+    return {
+      success: false,
+      message: `Unable to share. Please copy the link manually: ${url}`,
     };
   }
 }
@@ -45,5 +46,5 @@ export async function shareArtifact(
  * Check if the Web Share API is available
  */
 export function isWebShareSupported(): boolean {
-  return typeof navigator !== 'undefined' && 'share' in navigator;
+  return typeof navigator !== "undefined" && "share" in navigator;
 }

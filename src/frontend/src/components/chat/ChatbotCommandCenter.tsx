@@ -1,13 +1,14 @@
-import { useState, useRef, useEffect } from 'react';
-import { useProviderChat } from '@/hooks/chat/useProviderChat';
-import { useBackendActor } from '@/hooks/useBackendActor';
-import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
-import { Button } from '@/components/ui/button';
-import { Textarea } from '@/components/ui/textarea';
-import { ScrollArea } from '@/components/ui/scroll-area';
-import { Alert, AlertDescription } from '@/components/ui/alert';
-import { MessageSquare, Send, Loader2 } from 'lucide-react';
-import { toast } from 'sonner';
+import { Alert, AlertDescription } from "@/components/ui/alert";
+import { Button } from "@/components/ui/button";
+import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
+import { ScrollArea } from "@/components/ui/scroll-area";
+import { Textarea } from "@/components/ui/textarea";
+import { useProviderChat } from "@/hooks/chat/useProviderChat";
+import { useBackendActor } from "@/hooks/useBackendActor";
+import { Loader2, MessageSquare, Send } from "lucide-react";
+import { useEffect, useRef, useState } from "react";
+import { toast } from "sonner";
+import ChatMessageContent from "./ChatMessageContent";
 
 interface ChatbotCommandCenterProps {
   providerId: string;
@@ -16,15 +17,16 @@ interface ChatbotCommandCenterProps {
   onDraftChange?: (draft: string) => void;
 }
 
-export default function ChatbotCommandCenter({ 
-  providerId, 
+export default function ChatbotCommandCenter({
+  providerId,
   providerName,
   draftMessage,
   onDraftChange,
 }: ChatbotCommandCenterProps) {
   const { isReady: backendReady } = useBackendActor();
-  const { messages, isLoading, isReady, sendMessage, isSending } = useProviderChat(providerId);
-  const [input, setInput] = useState('');
+  const { messages, isLoading, isReady, sendMessage, isSending } =
+    useProviderChat(providerId);
+  const [input, setInput] = useState("");
   const scrollRef = useRef<HTMLDivElement>(null);
 
   // Sync external draft with internal state
@@ -38,7 +40,7 @@ export default function ChatbotCommandCenter({
     if (scrollRef.current) {
       scrollRef.current.scrollTop = scrollRef.current.scrollHeight;
     }
-  }, [messages]);
+  });
 
   const handleInputChange = (value: string) => {
     setInput(value);
@@ -49,34 +51,35 @@ export default function ChatbotCommandCenter({
 
   const handleSend = () => {
     if (!input.trim()) return;
-    
+
     if (!backendReady || !isReady) {
-      toast.error('Still connecting to the backend. Please wait a moment.');
+      toast.error("Still connecting to the backend. Please wait a moment.");
       return;
     }
-    
+
     sendMessage(input.trim(), {
       onSuccess: () => {
-        setInput('');
+        setInput("");
         if (onDraftChange) {
-          onDraftChange('');
+          onDraftChange("");
         }
       },
       onError: (error: any) => {
         // Error is already user-friendly from the hook
-        toast.error(error.message || 'Failed to send message');
+        toast.error(error.message || "Failed to send message");
       },
     });
   };
 
   const handleKeyDown = (e: React.KeyboardEvent) => {
-    if (e.key === 'Enter' && !e.shiftKey) {
+    if (e.key === "Enter" && !e.shiftKey) {
       e.preventDefault();
       handleSend();
     }
   };
 
-  const canSend = backendReady && isReady && !isSending && input.trim().length > 0;
+  const canSend =
+    backendReady && isReady && !isSending && input.trim().length > 0;
 
   return (
     <Card className="flex flex-col h-[calc(100vh-20rem)] sm:h-[600px]">
@@ -106,17 +109,17 @@ export default function ChatbotCommandCenter({
             <div className="space-y-4 py-4">
               {messages.map((msg, idx) => (
                 <div
-                  key={idx}
-                  className={`flex ${msg.fromSystem ? 'justify-start' : 'justify-end'}`}
+                  key={`msg-${idx}-${msg.content.slice(0, 8)}`}
+                  className={`flex ${msg.fromSystem ? "justify-start" : "justify-end"}`}
                 >
                   <div
                     className={`max-w-[85%] rounded-lg px-4 py-2 text-sm sm:max-w-[75%] ${
                       msg.fromSystem
-                        ? 'bg-muted text-foreground'
-                        : 'bg-primary text-primary-foreground'
+                        ? "bg-muted text-foreground"
+                        : "bg-primary text-primary-foreground"
                     }`}
                   >
-                    <p className="whitespace-pre-wrap break-words">{msg.content}</p>
+                    <ChatMessageContent content={msg.content} />
                   </div>
                 </div>
               ))}
@@ -128,7 +131,8 @@ export default function ChatbotCommandCenter({
           {!backendReady && (
             <Alert>
               <AlertDescription className="text-sm">
-                Still connecting to the backend. Please wait a moment before sending messages.
+                Still connecting to the backend. Please wait a moment before
+                sending messages.
               </AlertDescription>
             </Alert>
           )}

@@ -53,6 +53,10 @@ export interface ChatMessage {
     fromSystem: boolean;
     timestamp: Time;
 }
+export interface Link {
+    url: string;
+    description: string;
+}
 export interface UserProfile {
     name: string;
 }
@@ -63,14 +67,17 @@ export enum UserRole {
 }
 export interface backendInterface {
     addChatMessage(provider: string, content: string): Promise<void>;
+    addLink(link: Link): Promise<void>;
     addOrUpdateAPIKey(provider: string, key: string): Promise<void>;
     assignCallerUserRole(user: Principal, role: UserRole): Promise<void>;
     cancelPendingWorkflowRunsForProvider(provider: string): Promise<void>;
     cancelWorkflowRun(runId: string): Promise<void>;
     customProviderMetadataExists(providerKey: string): Promise<boolean>;
+    deleteLink(index: bigint): Promise<void>;
     executeWorkflow(provider: string, workflowType: string, inputs: string): Promise<WorkflowRun>;
     getAllAPIKeys(): Promise<Array<[Principal, Array<APIKey>]>>;
     getAllCustomProviderMetadata(): Promise<Array<CustomProviderMetadata>>;
+    getAllLinks(): Promise<Array<Link>>;
     getAllProviders(): Promise<Array<ProviderInfo>>;
     getAllUsersCustomProviderMetadata(): Promise<Array<[Principal, Array<CustomProviderMetadata>]>>;
     getCallerUserProfile(): Promise<UserProfile | null>;
@@ -87,5 +94,6 @@ export interface backendInterface {
     saveCallerUserProfile(profile: UserProfile): Promise<void>;
     setCustomProviderMetadata(providerKey: string, displayName: string): Promise<void>;
     streamChatMessages(provider: string, limit: bigint): Promise<Array<ChatMessage>>;
+    updateLink(index: bigint, newLink: Link): Promise<void>;
     updateWorkflowRun(runId: string, status: WorkflowRunStatus, outputBlobId: string | null, durationNanos: bigint | null): Promise<WorkflowRun>;
 }

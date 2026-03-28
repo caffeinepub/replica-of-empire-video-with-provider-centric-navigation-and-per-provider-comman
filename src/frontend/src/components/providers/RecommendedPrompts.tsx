@@ -1,13 +1,22 @@
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
-import { Button } from '@/components/ui/button';
-import { Lightbulb } from 'lucide-react';
+import { Button } from "@/components/ui/button";
+import {
+  Card,
+  CardContent,
+  CardDescription,
+  CardHeader,
+  CardTitle,
+} from "@/components/ui/card";
+import { Lightbulb } from "lucide-react";
 
 interface RecommendedPromptsProps {
   prompts: string[];
   onSelectPrompt: (prompt: string) => void;
 }
 
-export default function RecommendedPrompts({ prompts, onSelectPrompt }: RecommendedPromptsProps) {
+export default function RecommendedPrompts({
+  prompts,
+  onSelectPrompt,
+}: RecommendedPromptsProps) {
   if (!prompts || prompts.length === 0) {
     return null;
   }
@@ -25,9 +34,9 @@ export default function RecommendedPrompts({ prompts, onSelectPrompt }: Recommen
       </CardHeader>
       <CardContent>
         <div className="grid gap-2 sm:grid-cols-2">
-          {prompts.map((prompt, index) => (
+          {prompts.map((prompt) => (
             <Button
-              key={index}
+              key={prompt}
               variant="outline"
               className="h-auto justify-start whitespace-normal text-left text-sm"
               onClick={() => onSelectPrompt(prompt)}

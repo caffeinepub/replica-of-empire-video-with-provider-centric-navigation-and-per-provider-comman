@@ -1,25 +1,25 @@
-import { Link } from '@tanstack/react-router';
-import { Key, Wrench, Brain, Link as LinkIcon, Shield } from 'lucide-react';
-import { Button } from '@/components/ui/button';
+import { Button } from "@/components/ui/button";
 import {
   Sheet,
   SheetContent,
   SheetHeader,
   SheetTitle,
   SheetTrigger,
-} from '@/components/ui/sheet';
-import { Menu } from 'lucide-react';
-import { useState } from 'react';
+} from "@/components/ui/sheet";
+import { Link } from "@tanstack/react-router";
+import { Brain, Key, Link as LinkIcon, Shield, Wrench } from "lucide-react";
+import { Menu } from "lucide-react";
+import { useState } from "react";
 
 export default function MobileTopNavMenu() {
   const [open, setOpen] = useState(false);
 
   const navItems = [
-    { to: '/vault', icon: Key, label: 'Vault' },
-    { to: '/studio', icon: Wrench, label: 'Studio' },
-    { to: '/memory', icon: Brain, label: 'Memory' },
-    { to: '/links', icon: LinkIcon, label: 'Links' },
-    { to: '/admin', icon: Shield, label: 'Admin' },
+    { to: "/vault", icon: Key, label: "Vault" },
+    { to: "/studio", icon: Wrench, label: "Studio" },
+    { to: "/memory", icon: Brain, label: "Memory" },
+    { to: "/links", icon: LinkIcon, label: "Links" },
+    { to: "/admin", icon: Shield, label: "Admin" },
   ];
 
   return (

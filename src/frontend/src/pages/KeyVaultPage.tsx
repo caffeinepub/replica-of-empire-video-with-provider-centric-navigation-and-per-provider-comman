@@ -1,11 +1,17 @@
-import { PROVIDERS } from '@/providers/providers';
-import { useProviderKey } from '@/hooks/keys/useProviderKey';
-import { useResolvedProviderDisplayName } from '@/hooks/providers/useResolvedProviderDisplayName';
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
-import { Badge } from '@/components/ui/badge';
-import { Button } from '@/components/ui/button';
-import { Key, Check, X } from 'lucide-react';
-import { Link } from '@tanstack/react-router';
+import { Badge } from "@/components/ui/badge";
+import { Button } from "@/components/ui/button";
+import {
+  Card,
+  CardContent,
+  CardDescription,
+  CardHeader,
+  CardTitle,
+} from "@/components/ui/card";
+import { useProviderKey } from "@/hooks/keys/useProviderKey";
+import { useResolvedProviderDisplayName } from "@/hooks/providers/useResolvedProviderDisplayName";
+import { PROVIDERS } from "@/providers/providers";
+import { Link } from "@tanstack/react-router";
+import { Check, Key, X } from "lucide-react";
 
 function ProviderKeyStatus({ providerId }: { providerId: string }) {
   const { data: keyExists, isLoading } = useProviderKey(providerId);
@@ -44,8 +50,12 @@ function ProviderKeyCard({ providerId }: { providerId: string }) {
               <Icon className="h-5 w-5 text-primary" />
             </div>
             <div className="min-w-0 flex-1">
-              <CardTitle className="text-base sm:text-lg">{displayName}</CardTitle>
-              <CardDescription className="text-xs sm:text-sm">{provider.description}</CardDescription>
+              <CardTitle className="text-base sm:text-lg">
+                {displayName}
+              </CardTitle>
+              <CardDescription className="text-xs sm:text-sm">
+                {provider.description}
+              </CardDescription>
             </div>
           </div>
           <div className="flex-shrink-0">
@@ -71,7 +81,9 @@ export default function KeyVaultPage() {
         </div>
         <div>
           <h1 className="text-2xl font-bold sm:text-3xl">Empire Vault</h1>
-          <p className="text-sm text-muted-foreground sm:text-base">Manage your API keys securely across all providers</p>
+          <p className="text-sm text-muted-foreground sm:text-base">
+            Manage your API keys securely across all providers
+          </p>
         </div>
       </div>
 

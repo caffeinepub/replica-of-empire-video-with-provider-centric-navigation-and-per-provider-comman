@@ -1,12 +1,23 @@
-import { Card, CardContent } from '@/components/ui/card';
-import { Button } from '@/components/ui/button';
-import { Badge } from '@/components/ui/badge';
-import { Download, Share2, Loader2, CheckCircle2, XCircle, Clock, X } from 'lucide-react';
-import { toast } from 'sonner';
-import type { WorkflowRun } from '@/backend';
-import type { WorkflowType } from '@/providers/providers';
-import { shareArtifact } from '@/utils/share';
-import { useCancelWorkflowRun } from '@/hooks/workflows/useCancelWorkflowRun';
+import type { WorkflowRun } from "@/backend";
+import { Badge } from "@/components/ui/badge";
+import { Button } from "@/components/ui/button";
+import { Card, CardContent } from "@/components/ui/card";
+import { useCancelWorkflowRun } from "@/hooks/workflows/useCancelWorkflowRun";
+import { useWorkflowRunUpdate } from "@/hooks/workflows/useWorkflowExecution";
+import type { WorkflowType } from "@/providers/providers";
+import { shareArtifact } from "@/utils/share";
+import {
+  AlertCircle,
+  CheckCircle2,
+  Clock,
+  Download,
+  Loader2,
+  Share2,
+  X,
+  XCircle,
+} from "lucide-react";
+import { useState } from "react";
+import { toast } from "sonner";
 
 interface GenerationResultProps {
   run: WorkflowRun;
@@ -14,33 +25,39 @@ interface GenerationResultProps {
   workflowType: WorkflowType;
 }
 
-export function GenerationResult({ run, provider, workflowType }: GenerationResultProps) {
+export function GenerationResult({
+  run,
+  provider,
+  workflowType,
+}: GenerationResultProps) {
   const cancelRun = useCancelWorkflowRun();
+  const updateWorkflowRun = useWorkflowRunUpdate();
+  const [imageLoadError, setImageLoadError] = useState(false);
 
   const getStatusBadge = () => {
     switch (run.status.__kind__) {
-      case 'pending':
+      case "pending":
         return (
           <Badge variant="outline" className="gap-1">
             <Clock className="h-3 w-3" />
             Pending
           </Badge>
         );
-      case 'running':
+      case "running":
         return (
           <Badge variant="outline" className="gap-1">
             <Loader2 className="h-3 w-3 animate-spin" />
             Generating...
           </Badge>
         );
-      case 'success':
+      case "success":
         return (
           <Badge variant="default" className="gap-1 bg-green-600">
             <CheckCircle2 className="h-3 w-3" />
             Complete
           </Badge>
         );
-      case 'failed':
+      case "failed":
         return (
           <Badge variant="destructive" className="gap-1">
             <XCircle className="h-3 w-3" />
@@ -55,17 +72,17 @@ export function GenerationResult({ run, provider, workflowType }: GenerationResu
 
     try {
       // Create a temporary link to download the image
-      const link = document.createElement('a');
+      const link = document.createElement("a");
       link.href = run.outputBlobId;
       link.download = `${provider}-${workflowType}-${run.id}.png`;
       document.body.appendChild(link);
       link.click();
       document.body.removeChild(link);
-      
-      toast.success('Download started');
+
+      toast.success("Download started");
     } catch (error) {
-      console.error('Download failed:', error);
-      toast.error('Failed to download');
+      console.error("Download failed:", error);
+      toast.error("Failed to download");
     }
   };
 
@@ -75,24 +92,50 @@ export function GenerationResult({ run, provider, workflowType }: GenerationResu
     try {
       await shareArtifact(run.outputBlobId, `${provider} ${workflowType}`);
     } catch (error) {
-      console.error('Share failed:', error);
-      toast.error('Failed to share');
+      console.error("Share failed:", error);
+      toast.error("Failed to share");
     }
   };
 
   const handleCancel = async () => {
     try {
       await cancelRun.mutateAsync({ runId: run.id, provider });
-      toast.success('Generation cancelled');
+      toast.success("Generation cancelled");
     } catch (error: any) {
-      console.error('Cancel failed:', error);
-      toast.error(error.message || 'Failed to cancel');
+      console.error("Cancel failed:", error);
+      toast.error(error.message || "Failed to cancel");
     }
   };
 
-  const isProcessing = run.status.__kind__ === 'pending' || run.status.__kind__ === 'running';
-  const isComplete = run.status.__kind__ === 'success';
-  const isFailed = run.status.__kind__ === 'failed';
+  const handleImageError = async () => {
+    console.error("Image failed to load:", run.outputBlobId);
+    setImageLoadError(true);
+
+    // Mark the run as failed if it's currently marked as success
+    if (run.status.__kind__ === "success") {
+      try {
+        await updateWorkflowRun.mutateAsync({
+          runId: run.id,
+          provider,
+          status: {
+            __kind__: "failed",
+            failed:
+              "Failed to load generated image. The image may be corrupted or unavailable.",
+          },
+        });
+      } catch (error) {
+        console.error(
+          "Failed to update run status after image load error:",
+          error,
+        );
+      }
+    }
+  };
+
+  const isProcessing =
+    run.status.__kind__ === "pending" || run.status.__kind__ === "running";
+  const isComplete = run.status.__kind__ === "success";
+  const isFailed = run.status.__kind__ === "failed";
 
   return (
     <Card>
@@ -126,7 +169,7 @@ export function GenerationResult({ run, provider, workflowType }: GenerationResu
               {(() => {
                 try {
                   const inputs = JSON.parse(run.inputs);
-                  return inputs.prompt || inputs.script || 'No prompt provided';
+                  return inputs.prompt || inputs.script || "No prompt provided";
                 } catch {
                   return run.inputs;
                 }
@@ -136,30 +179,43 @@ export function GenerationResult({ run, provider, workflowType }: GenerationResu
         )}
 
         {/* Show preview for completed generations */}
-        {isComplete && run.outputBlobId && (
+        {isComplete && run.outputBlobId && !imageLoadError && (
           <div className="space-y-3">
             <div className="relative aspect-square w-full overflow-hidden rounded-lg border bg-muted">
-              {workflowType === 'video-generation' ? (
+              {workflowType === "video-generation" ? (
+                // biome-ignore lint/a11y/useMediaCaption: AI-generated video content
                 <video
                   src={run.outputBlobId}
                   controls
                   className="h-full w-full object-contain"
+                  onError={handleImageError}
                 />
               ) : (
                 <img
                   src={run.outputBlobId}
                   alt="Generated content"
                   className="h-full w-full object-contain"
+                  onError={handleImageError}
                 />
               )}
             </div>
 
             <div className="flex gap-2">
-              <Button variant="outline" size="sm" onClick={handleDownload} className="flex-1">
+              <Button
+                variant="outline"
+                size="sm"
+                onClick={handleDownload}
+                className="flex-1"
+              >
                 <Download className="mr-2 h-4 w-4" />
                 Download
               </Button>
-              <Button variant="outline" size="sm" onClick={handleShare} className="flex-1">
+              <Button
+                variant="outline"
+                size="sm"
+                onClick={handleShare}
+                className="flex-1"
+              >
                 <Share2 className="mr-2 h-4 w-4" />
                 Share
               </Button>
@@ -167,10 +223,22 @@ export function GenerationResult({ run, provider, workflowType }: GenerationResu
           </div>
         )}
 
+        {/* Show error when image fails to load */}
+        {isComplete && imageLoadError && (
+          <div className="flex items-start gap-3 rounded-lg border border-destructive/50 bg-destructive/10 p-4">
+            <AlertCircle className="h-5 w-5 text-destructive flex-shrink-0 mt-0.5" />
+            <div className="text-sm text-destructive">
+              Failed to load generated image. The image may be corrupted or
+              unavailable. Please try generating again.
+            </div>
+          </div>
+        )}
+
         {/* Show error message for failed generations */}
-        {isFailed && run.status.__kind__ === 'failed' && (
-          <div className="text-sm text-destructive">
-            {run.status.failed}
+        {isFailed && run.status.__kind__ === "failed" && (
+          <div className="flex items-start gap-3 rounded-lg border border-destructive/50 bg-destructive/10 p-4">
+            <AlertCircle className="h-5 w-5 text-destructive flex-shrink-0 mt-0.5" />
+            <div className="text-sm text-destructive">{run.status.failed}</div>
           </div>
         )}
 

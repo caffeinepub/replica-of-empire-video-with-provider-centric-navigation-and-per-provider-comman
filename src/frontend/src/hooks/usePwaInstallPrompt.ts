@@ -1,8 +1,8 @@
-import { useState, useEffect } from 'react';
+import { useEffect, useState } from "react";
 
 interface BeforeInstallPromptEvent extends Event {
   prompt: () => Promise<void>;
-  userChoice: Promise<{ outcome: 'accepted' | 'dismissed' }>;
+  userChoice: Promise<{ outcome: "accepted" | "dismissed" }>;
 }
 
 interface UsePwaInstallPromptReturn {
@@ -13,14 +13,15 @@ interface UsePwaInstallPromptReturn {
 }
 
 export function usePwaInstallPrompt(): UsePwaInstallPromptReturn {
-  const [deferredPrompt, setDeferredPrompt] = useState<BeforeInstallPromptEvent | null>(null);
+  const [deferredPrompt, setDeferredPrompt] =
+    useState<BeforeInstallPromptEvent | null>(null);
   const [isInstalled, setIsInstalled] = useState(false);
   const [isIOS, setIsIOS] = useState(false);
 
   useEffect(() => {
     // Check if already installed
     const checkInstalled = () => {
-      if (window.matchMedia('(display-mode: standalone)').matches) {
+      if (window.matchMedia("(display-mode: standalone)").matches) {
         setIsInstalled(true);
       }
     };
@@ -43,12 +44,15 @@ export function usePwaInstallPrompt(): UsePwaInstallPromptReturn {
       setDeferredPrompt(null);
     };
 
-    window.addEventListener('beforeinstallprompt', handleBeforeInstallPrompt);
-    window.addEventListener('appinstalled', handleAppInstalled);
+    window.addEventListener("beforeinstallprompt", handleBeforeInstallPrompt);
+    window.addEventListener("appinstalled", handleAppInstalled);
 
     return () => {
-      window.removeEventListener('beforeinstallprompt', handleBeforeInstallPrompt);
-      window.removeEventListener('appinstalled', handleAppInstalled);
+      window.removeEventListener(
+        "beforeinstallprompt",
+        handleBeforeInstallPrompt,
+      );
+      window.removeEventListener("appinstalled", handleAppInstalled);
     };
   }, []);
 
@@ -60,14 +64,14 @@ export function usePwaInstallPrompt(): UsePwaInstallPromptReturn {
     try {
       await deferredPrompt.prompt();
       const choiceResult = await deferredPrompt.userChoice;
-      
-      if (choiceResult.outcome === 'accepted') {
+
+      if (choiceResult.outcome === "accepted") {
         setIsInstalled(true);
       }
-      
+
       setDeferredPrompt(null);
     } catch (error) {
-      console.error('Error prompting install:', error);
+      console.error("Error prompting install:", error);
     }
   };
 

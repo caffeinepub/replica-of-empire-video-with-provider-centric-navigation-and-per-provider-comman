@@ -1,14 +1,15 @@
-import { Download, Check, Share } from 'lucide-react';
-import { Button } from '@/components/ui/button';
-import { usePwaInstallPrompt } from '@/hooks/usePwaInstallPrompt';
+import { Button } from "@/components/ui/button";
 import {
   Popover,
   PopoverContent,
   PopoverTrigger,
-} from '@/components/ui/popover';
+} from "@/components/ui/popover";
+import { usePwaInstallPrompt } from "@/hooks/usePwaInstallPrompt";
+import { Check, Download, Share } from "lucide-react";
 
 export default function PwaInstallPrompt() {
-  const { isInstallable, isInstalled, isIOS, promptInstall } = usePwaInstallPrompt();
+  const { isInstallable, isInstalled, isIOS, promptInstall } =
+    usePwaInstallPrompt();
 
   // Don't show anything if already installed
   if (isInstalled) {

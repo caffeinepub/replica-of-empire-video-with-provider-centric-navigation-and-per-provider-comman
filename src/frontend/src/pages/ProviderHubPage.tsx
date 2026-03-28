@@ -1,10 +1,16 @@
-import { Link } from '@tanstack/react-router';
-import { PROVIDERS } from '@/providers/providers';
-import { useResolvedProviderDisplayName } from '@/hooks/providers/useResolvedProviderDisplayName';
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
-import { Button } from '@/components/ui/button';
-import { Badge } from '@/components/ui/badge';
-import { ArrowRight } from 'lucide-react';
+import { Badge } from "@/components/ui/badge";
+import { Button } from "@/components/ui/button";
+import {
+  Card,
+  CardContent,
+  CardDescription,
+  CardHeader,
+  CardTitle,
+} from "@/components/ui/card";
+import { useResolvedProviderDisplayName } from "@/hooks/providers/useResolvedProviderDisplayName";
+import { PROVIDERS } from "@/providers/providers";
+import { Link } from "@tanstack/react-router";
+import { ArrowRight } from "lucide-react";
 
 function ProviderCard({ providerId }: { providerId: string }) {
   const provider = PROVIDERS.find((p) => p.id === providerId);
@@ -21,7 +27,9 @@ function ProviderCard({ providerId }: { providerId: string }) {
           <Icon className="h-6 w-6 text-primary" />
         </div>
         <CardTitle className="text-lg sm:text-xl">{displayName}</CardTitle>
-        <CardDescription className="text-sm">{provider.description}</CardDescription>
+        <CardDescription className="text-sm">
+          {provider.description}
+        </CardDescription>
       </CardHeader>
       <CardContent className="space-y-4">
         <div className="flex flex-wrap gap-2">
@@ -47,15 +55,19 @@ export default function ProviderHubPage() {
     <div className="relative min-h-full">
       <div
         className="absolute inset-0 bg-cover bg-center opacity-5"
-        style={{ backgroundImage: 'url(/assets/generated/hero-bg.dim_1600x900.png)' }}
+        style={{
+          backgroundImage: "url(/assets/generated/hero-bg.dim_1600x900.png)",
+        }}
       />
       <div className="relative">
         <div className="border-b border-border bg-card/50 backdrop-blur-sm">
           <div className="container mx-auto px-4 py-8 sm:px-6 sm:py-12">
-            <h1 className="mb-3 text-2xl font-bold tracking-tight sm:mb-4 sm:text-4xl">AI Provider Command Center</h1>
+            <h1 className="mb-3 text-2xl font-bold tracking-tight sm:mb-4 sm:text-4xl">
+              AI Provider Command Center
+            </h1>
             <p className="text-base text-muted-foreground sm:text-lg">
-              Select a provider to access its dedicated command center, manage API keys, and interact with
-              AI models.
+              Select a provider to access its dedicated command center, manage
+              API keys, and interact with AI models.
             </p>
           </div>
         </div>

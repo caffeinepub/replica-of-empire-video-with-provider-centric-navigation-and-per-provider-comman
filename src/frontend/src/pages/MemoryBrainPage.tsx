@@ -1,6 +1,12 @@
-import NotIntegratedCallout from '@/components/common/NotIntegratedCallout';
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
-import { Brain } from 'lucide-react';
+import NotIntegratedCallout from "@/components/common/NotIntegratedCallout";
+import {
+  Card,
+  CardContent,
+  CardDescription,
+  CardHeader,
+  CardTitle,
+} from "@/components/ui/card";
+import { Brain } from "lucide-react";
 
 export default function MemoryBrainPage() {
   return (
@@ -19,9 +25,12 @@ export default function MemoryBrainPage() {
 
       <Card>
         <CardHeader>
-          <CardTitle className="text-lg sm:text-xl">Memory & RAG System</CardTitle>
+          <CardTitle className="text-lg sm:text-xl">
+            Memory & RAG System
+          </CardTitle>
           <CardDescription className="text-sm">
-            Store and recall brand guidelines, generation patterns, and context across sessions
+            Store and recall brand guidelines, generation patterns, and context
+            across sessions
           </CardDescription>
         </CardHeader>
         <CardContent>

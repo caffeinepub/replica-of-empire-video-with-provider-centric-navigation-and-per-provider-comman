@@ -1,6 +1,7 @@
-import React, { Component, ReactNode } from 'react';
-import { Button } from '@/components/ui/button';
-import { AlertCircle } from 'lucide-react';
+import { Button } from "@/components/ui/button";
+import { AlertCircle } from "lucide-react";
+import type React from "react";
+import { Component, type ReactNode } from "react";
 
 interface ErrorBoundaryProps {
   children: ReactNode;
@@ -13,7 +14,10 @@ interface ErrorBoundaryState {
   error: Error | null;
 }
 
-export default class ErrorBoundary extends Component<ErrorBoundaryProps, ErrorBoundaryState> {
+export default class ErrorBoundary extends Component<
+  ErrorBoundaryProps,
+  ErrorBoundaryState
+> {
   constructor(props: ErrorBoundaryProps) {
     super(props);
     this.state = {
@@ -30,8 +34,8 @@ export default class ErrorBoundary extends Component<ErrorBoundaryProps, ErrorBo
   }
 
   componentDidCatch(error: Error, errorInfo: React.ErrorInfo): void {
-    console.error('Error caught by boundary:', error);
-    console.error('Component stack:', errorInfo.componentStack);
+    console.error("Error caught by boundary:", error);
+    console.error("Component stack:", errorInfo.componentStack);
   }
 
   handleReset = () => {
@@ -52,7 +56,7 @@ export default class ErrorBoundary extends Component<ErrorBoundaryProps, ErrorBo
           <AlertCircle className="mb-4 h-12 w-12 text-destructive" />
           <h3 className="mb-2 text-lg font-semibold">Something went wrong</h3>
           <p className="mb-4 text-sm text-muted-foreground">
-            {this.state.error?.message || 'An unexpected error occurred'}
+            {this.state.error?.message || "An unexpected error occurred"}
           </p>
           <Button onClick={this.handleReset} variant="outline">
             Try Again

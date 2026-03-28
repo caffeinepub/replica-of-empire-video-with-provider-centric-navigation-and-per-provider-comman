@@ -1,15 +1,15 @@
-import { useQuery } from '@tanstack/react-query';
-import { useBackendActor } from './useBackendActor';
-import type { UserProfile } from '@/backend';
+import type { UserProfile } from "@/backend";
+import { useQuery } from "@tanstack/react-query";
+import { useBackendActor } from "./useBackendActor";
 
 export function useGetCallerUserProfile() {
   const { actor, isConnecting, isReady } = useBackendActor();
 
   const query = useQuery<UserProfile | null>({
-    queryKey: ['currentUserProfile'],
+    queryKey: ["currentUserProfile"],
     queryFn: async () => {
       if (!actor) {
-        throw new Error('Backend connection not ready');
+        throw new Error("Backend connection not ready");
       }
       return actor.getCallerUserProfile();
     },
@@ -25,10 +25,10 @@ export function useGetCallerUserProfile() {
 }
 
 export function useIsCallerAdmin() {
-  const { actor, isConnecting, isReady } = useBackendActor();
+  const { actor, isReady } = useBackendActor();
 
   return useQuery<boolean>({
-    queryKey: ['isCallerAdmin'],
+    queryKey: ["isCallerAdmin"],
     queryFn: async () => {
       if (!actor) return false;
       return actor.isCallerAdmin();

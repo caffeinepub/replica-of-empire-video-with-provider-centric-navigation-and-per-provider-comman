@@ -1,7 +1,10 @@
-import { useMutation, useQueryClient } from '@tanstack/react-query';
-import { useBackendActor } from '../useBackendActor';
-import { getUserFriendlyErrorMessage, sanitizeErrorForLogging } from '@/utils/backendErrorMessages';
-import type { WorkflowRun } from '@/backend';
+import type { WorkflowRun } from "@/backend";
+import {
+  getUserFriendlyErrorMessage,
+  sanitizeErrorForLogging,
+} from "@/utils/backendErrorMessages";
+import { useMutation, useQueryClient } from "@tanstack/react-query";
+import { useBackendActor } from "../useBackendActor";
 
 interface ExecuteWorkflowParams {
   provider: string;
@@ -16,19 +19,30 @@ export function useWorkflowExecution() {
   return useMutation<WorkflowRun, Error, ExecuteWorkflowParams>({
     mutationFn: async ({ provider, workflowType, inputs }) => {
       if (!actor || !isReady) {
-        throw new Error('Backend is not ready. Please wait a moment and try again.');
+        throw new Error(
+          "Backend is not ready. Please wait a moment and try again.",
+        );
       }
 
       const inputsJson = JSON.stringify(inputs);
-      const run = await actor.executeWorkflow(provider, workflowType, inputsJson);
+      const run = await actor.executeWorkflow(
+        provider,
+        workflowType,
+        inputsJson,
+      );
       return run;
     },
     onSuccess: (_, variables) => {
       // Invalidate workflow runs for this provider
-      queryClient.invalidateQueries({ queryKey: ['workflowRuns', variables.provider] });
+      queryClient.invalidateQueries({
+        queryKey: ["workflowRuns", variables.provider],
+      });
     },
     onError: (error) => {
-      console.error('Workflow execution failed:', sanitizeErrorForLogging(error));
+      console.error(
+        "Workflow execution failed:",
+        sanitizeErrorForLogging(error),
+      );
     },
   });
 }
@@ -40,7 +54,7 @@ export function useWorkflowRunUpdate() {
   interface UpdateParams {
     runId: string;
     provider: string;
-    status: WorkflowRun['status'];
+    status: WorkflowRun["status"];
     outputBlobId?: string;
     durationNanos?: bigint;
   }
@@ -48,22 +62,29 @@ export function useWorkflowRunUpdate() {
   return useMutation<WorkflowRun, Error, UpdateParams>({
     mutationFn: async ({ runId, status, outputBlobId, durationNanos }) => {
       if (!actor || !isReady) {
-        throw new Error('Backend is not ready. Please wait a moment and try again.');
+        throw new Error(
+          "Backend is not ready. Please wait a moment and try again.",
+        );
       }
 
       return await actor.updateWorkflowRun(
         runId,
         status,
         outputBlobId || null,
-        durationNanos || null
+        durationNanos || null,
       );
     },
     onSuccess: (_, variables) => {
       // Invalidate workflow runs for this provider
-      queryClient.invalidateQueries({ queryKey: ['workflowRuns', variables.provider] });
+      queryClient.invalidateQueries({
+        queryKey: ["workflowRuns", variables.provider],
+      });
     },
     onError: (error) => {
-      console.error('Workflow run update failed:', sanitizeErrorForLogging(error));
+      console.error(
+        "Workflow run update failed:",
+        sanitizeErrorForLogging(error),
+      );
     },
   });
 }

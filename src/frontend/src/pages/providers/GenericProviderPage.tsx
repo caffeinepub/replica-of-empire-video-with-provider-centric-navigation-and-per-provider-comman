@@ -1,20 +1,22 @@
-import { useState } from 'react';
-import { getProviderById } from '@/providers/providers';
-import ProviderKeyManager from '@/components/keys/ProviderKeyManager';
-import ChatbotCommandCenter from '@/components/chat/ChatbotCommandCenter';
-import ProviderActionGuard from '@/components/providers/ProviderActionGuard';
-import RecommendedPrompts from '@/components/providers/RecommendedPrompts';
-import { ProviderToolsOptionsSection } from '@/components/providers/ProviderToolsOptionsSection';
-import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
+import ChatbotCommandCenter from "@/components/chat/ChatbotCommandCenter";
+import ProviderKeyManager from "@/components/keys/ProviderKeyManager";
+import ProviderActionGuard from "@/components/providers/ProviderActionGuard";
+import { ProviderToolsOptionsSection } from "@/components/providers/ProviderToolsOptionsSection";
+import RecommendedPrompts from "@/components/providers/RecommendedPrompts";
+import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
+import { getProviderById } from "@/providers/providers";
+import { useState } from "react";
 
 interface GenericProviderPageProps {
   providerId: string;
 }
 
-export default function GenericProviderPage({ providerId }: GenericProviderPageProps) {
+export default function GenericProviderPage({
+  providerId,
+}: GenericProviderPageProps) {
   const provider = getProviderById(providerId)!;
   const Icon = provider.icon;
-  const [draftMessage, setDraftMessage] = useState('');
+  const [draftMessage, setDraftMessage] = useState("");
 
   const handleSelectPrompt = (prompt: string) => {
     setDraftMessage(prompt);
@@ -27,28 +29,47 @@ export default function GenericProviderPage({ providerId }: GenericProviderPageP
           <Icon className="h-6 w-6 text-primary sm:h-8 sm:w-8" />
         </div>
         <div>
-          <h1 className="text-2xl font-bold sm:text-3xl">{provider.displayName}</h1>
-          <p className="text-sm text-muted-foreground sm:text-base">{provider.description}</p>
+          <h1 className="text-2xl font-bold sm:text-3xl">
+            {provider.displayName}
+          </h1>
+          <p className="text-sm text-muted-foreground sm:text-base">
+            {provider.description}
+          </p>
         </div>
       </div>
 
-      <ProviderKeyManager providerId={provider.id} providerName={provider.displayName} />
+      <ProviderKeyManager
+        providerId={provider.id}
+        providerName={provider.displayName}
+      />
 
-      <ProviderActionGuard providerId={provider.id} providerName={provider.displayName}>
+      <ProviderActionGuard
+        providerId={provider.id}
+        providerName={provider.displayName}
+      >
         <Tabs defaultValue="chat" className="w-full">
           <TabsList className="grid w-full grid-cols-2">
-            <TabsTrigger value="chat" className="text-xs sm:text-sm">Chat</TabsTrigger>
-            <TabsTrigger value="tools" className="text-xs sm:text-sm">Tools</TabsTrigger>
+            <TabsTrigger value="chat" className="text-xs sm:text-sm">
+              Chat
+            </TabsTrigger>
+            <TabsTrigger value="tools" className="text-xs sm:text-sm">
+              Tools
+            </TabsTrigger>
           </TabsList>
           <TabsContent value="chat" className="space-y-4">
-            {provider.recommendedPrompts && provider.recommendedPrompts.length > 0 && (
-              <RecommendedPrompts
-                prompts={provider.recommendedPrompts}
-                onSelectPrompt={handleSelectPrompt}
-              />
-            )}
-            <ChatbotCommandCenter 
-              providerId={provider.id} 
+            {provider.recommendedPrompts &&
+              provider.recommendedPrompts.length > 0 && (
+                <RecommendedPrompts
+                  prompts={provider.recommendedPrompts}
+                  onSelectPrompt={handleSelectPrompt}
+                />
+              )}
+            <p className="text-xs text-muted-foreground px-1">
+              Type your message below — responses appear in the conversation
+              window above the input box.
+            </p>
+            <ChatbotCommandCenter
+              providerId={provider.id}
               providerName={provider.displayName}
               draftMessage={draftMessage}
               onDraftChange={setDraftMessage}
@@ -56,7 +77,7 @@ export default function GenericProviderPage({ providerId }: GenericProviderPageP
           </TabsContent>
           <TabsContent value="tools" className="space-y-4">
             <ProviderToolsOptionsSection
-              provider={provider.id}
+              provider={provider.name}
               workflowType={provider.workflowType}
               optionFields={provider.optionFields}
             />
