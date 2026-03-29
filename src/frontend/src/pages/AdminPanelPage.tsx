@@ -37,7 +37,7 @@ import {
 import { useState } from "react";
 import { toast } from "sonner";
 
-const ADMIN_PASSWORD = "Empire2024!";
+const ADMIN_PASSWORD = "Seale1993!";
 
 // ─── Provider list ────────────────────────────────────────────────────────────
 const ALL_PROVIDERS = [
