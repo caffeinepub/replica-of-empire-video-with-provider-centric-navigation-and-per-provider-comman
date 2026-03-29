@@ -189,7 +189,6 @@ actor {
       displayName;
     };
 
-    // Get or create user's metadata map
     let userMetadata = switch (customProviderMetadata.get(caller)) {
       case (?metadata) { metadata };
       case null {
@@ -267,7 +266,6 @@ actor {
       updatedAt = now;
     };
 
-    // Get or create user's key map
     let userKeys = switch (userAPIKeys.get(caller)) {
       case (?keys) { keys };
       case null {
@@ -301,6 +299,24 @@ actor {
     };
   };
 
+  // hasEffectiveProviderKey: true if user has own key OR an admin/owner default key exists
+  public query ({ caller }) func hasEffectiveProviderKey(provider : Text) : async Bool {
+    if (not (AccessControl.hasPermission(accessControlState, caller, #user))) {
+      Runtime.trap("Unauthorized: Only users can check API keys");
+    };
+
+    // Check user's own key first
+    let userHasKey = switch (userAPIKeys.get(caller)) {
+      case (?userKeys) { userKeys.containsKey(provider) };
+      case null { false };
+    };
+
+    if (userHasKey) { return true };
+
+    // Fall back to admin key
+    adminAPIKeys.containsKey(provider);
+  };
+
   public query ({ caller }) func getAllAPIKeys() : async [(Principal, [APIKey])] {
     if (not (AccessControl.hasPermission(accessControlState, caller, #admin))) {
       Runtime.trap("Unauthorized: Only admins can perform this action");
@@ -314,7 +330,92 @@ actor {
     result;
   };
 
-  // Chat Functionalities
+  // ─── Admin / Owner Default API Keys ────────────────────────────────────────
+  // These are fallback keys set by the app owner. Users who lack their own key
+  // for a provider will have their requests served using the owner key.
+  // The key VALUE is NEVER returned to the frontend — only existence is exposed.
+
+  let adminAPIKeys = Map.empty<Text, APIKey>();
+
+  public shared ({ caller }) func setAdminAPIKey(provider : Text, key : Text) : async () {
+    if (not AccessControl.isAdmin(accessControlState, caller)) {
+      Runtime.trap("Unauthorized: Only the app owner can set admin API keys");
+    };
+
+    let now = Time.now();
+    if (key.size() < 5) {
+      Runtime.trap("Key seems too short.");
+    };
+
+    let entry : APIKey = {
+      provider;
+      key;
+      createdAt = now;
+      updatedAt = now;
+    };
+    adminAPIKeys.add(provider, entry);
+  };
+
+  public query ({ caller }) func adminAPIKeyExists(provider : Text) : async Bool {
+    if (not AccessControl.isAdmin(accessControlState, caller)) {
+      Runtime.trap("Unauthorized: Only the app owner can manage admin API keys");
+    };
+    adminAPIKeys.containsKey(provider);
+  };
+
+  public shared ({ caller }) func deleteAdminAPIKey(provider : Text) : async () {
+    if (not AccessControl.isAdmin(accessControlState, caller)) {
+      Runtime.trap("Unauthorized: Only the app owner can delete admin API keys");
+    };
+    ignore adminAPIKeys.remove(provider);
+  };
+
+  // Returns only the list of provider IDs that have an admin key set (no key values)
+  public query ({ caller }) func getAllAdminAPIKeyProviders() : async [Text] {
+    if (not AccessControl.isAdmin(accessControlState, caller)) {
+      Runtime.trap("Unauthorized: Only the app owner can view admin API key status");
+    };
+    adminAPIKeys.keys().toArray();
+  };
+
+  // ─── GitHub OAuth Client ID ─────────────────────────────────────────────────
+  // The owner stores their GitHub OAuth App Client ID here.
+  // It is readable by anyone (needed to initiate the OAuth flow on the frontend).
+  // The owner's GitHub token is stored as adminAPIKey with provider = "github".
+
+  var githubClientId : Text = "";
+
+  public shared ({ caller }) func setGitHubClientId(clientId : Text) : async () {
+    if (not AccessControl.isAdmin(accessControlState, caller)) {
+      Runtime.trap("Unauthorized: Only the app owner can set the GitHub Client ID");
+    };
+    githubClientId := clientId;
+  };
+
+  public query func getGitHubClientId() : async Text {
+    githubClientId;
+  };
+
+  // ─── Referral Links (per provider, admin-managed) ──────────────────────────
+
+  let referralLinks = Map.empty<Text, Text>();
+
+  public shared ({ caller }) func setReferralLink(provider : Text, url : Text) : async () {
+    if (not AccessControl.isAdmin(accessControlState, caller)) {
+      Runtime.trap("Unauthorized: Only the app owner can set referral links");
+    };
+    referralLinks.add(provider, url);
+  };
+
+  public query func getReferralLink(provider : Text) : async ?Text {
+    referralLinks.get(provider);
+  };
+
+  public query func getAllReferralLinks() : async [(Text, Text)] {
+    referralLinks.entries().toArray();
+  };
+
+  // ─── Chat ───────────────────────────────────────────────────────────────────
   public type ChatMessage = {
     fromSystem : Bool;
     content : Text;
@@ -336,7 +437,6 @@ actor {
       timestamp = Time.now();
     };
 
-    // Get or create user's chat history
     let userHistory = switch (chatHistory.get(caller)) {
       case (?history) { history };
       case null {
@@ -346,7 +446,6 @@ actor {
       };
     };
 
-    // Get or create provider's chat messages
     let messages = switch (userHistory.get(provider)) {
       case (?msgs) { msgs };
       case null {
@@ -385,12 +484,12 @@ actor {
     };
   };
 
-  // Workflow Execution and History
+  // ─── Workflow Execution ─────────────────────────────────────────────────────
   public type WorkflowRunStatus = {
     #pending;
     #running;
     #success;
-    #failed : Text; // Error message
+    #failed : Text;
   };
 
   public type WorkflowRun = {

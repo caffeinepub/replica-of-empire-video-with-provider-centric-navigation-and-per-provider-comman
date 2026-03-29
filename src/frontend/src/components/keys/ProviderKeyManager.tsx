@@ -10,12 +10,13 @@ import {
 } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
+import { useHasEffectiveProviderKey } from "@/hooks/admin/useAdminKeys";
 import {
   useProviderKey,
   useSaveProviderKey,
 } from "@/hooks/keys/useProviderKey";
 import { useBackendActor } from "@/hooks/useBackendActor";
-import { Check, Key, Loader2 } from "lucide-react";
+import { Check, Info, Key, Loader2 } from "lucide-react";
 import { useState } from "react";
 import { toast } from "sonner";
 
@@ -34,6 +35,7 @@ export default function ProviderKeyManager({
 }: ProviderKeyManagerProps) {
   const { isConnecting, isReady, error, retry } = useBackendActor();
   const { data: keyExists, isLoading } = useProviderKey(providerId);
+  const { data: hasEffectiveKey } = useHasEffectiveProviderKey(providerId);
   const { mutate: saveKey, isPending } = useSaveProviderKey();
   const [apiKey, setApiKey] = useState("");
   const [isEditing, setIsEditing] = useState(false);
@@ -65,17 +67,14 @@ export default function ProviderKeyManager({
           setIsEditing(false);
         },
         onError: (error: any) => {
-          // Error is already user-friendly from the hook
           const errorMessage =
             error.message || `Failed to save ${credentialLabel}`;
           toast.error(errorMessage);
-          // Keep input editable so user can retry
         },
       },
     );
   };
 
-  // Show connection error if backend is not available
   if (error && !isConnecting) {
     return (
       <Card>
@@ -96,7 +95,6 @@ export default function ProviderKeyManager({
     );
   }
 
-  // Show loading state while connecting
   if (isConnecting || isLoading) {
     return (
       <Card>
@@ -116,6 +114,9 @@ export default function ProviderKeyManager({
     );
   }
 
+  // Owner key fallback banner — only when user has no own key but owner key exists
+  const showOwnerKeyBanner = !keyExists && hasEffectiveKey;
+
   return (
     <Card>
       <CardHeader>
@@ -126,10 +127,23 @@ export default function ProviderKeyManager({
         <CardDescription>
           {keyExists
             ? `Your ${credentialLabel.toLowerCase()} is securely stored. You can update it below.`
-            : `Add your ${credentialLabel.toLowerCase()} to enable this provider.`}
+            : showOwnerKeyBanner
+              ? `Using the app owner's key. Add your own ${credentialLabel.toLowerCase()} to avoid usage charges.`
+              : `Add your ${credentialLabel.toLowerCase()} to enable this provider.`}
         </CardDescription>
       </CardHeader>
       <CardContent className="space-y-4">
+        {/* Owner key active banner */}
+        {showOwnerKeyBanner && (
+          <Alert className="border-amber-500/40 bg-amber-500/10">
+            <Info className="h-4 w-4 text-amber-400" />
+            <AlertDescription className="text-amber-300">
+              <strong>Owner key active</strong> — your usage will be billed to
+              your account. Add your own key to avoid charges.
+            </AlertDescription>
+          </Alert>
+        )}
+
         {keyExists && !isEditing ? (
           <Alert>
             <Check className="h-4 w-4" />

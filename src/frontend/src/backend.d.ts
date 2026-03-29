@@ -96,4 +96,18 @@ export interface backendInterface {
     streamChatMessages(provider: string, limit: bigint): Promise<Array<ChatMessage>>;
     updateLink(index: bigint, newLink: Link): Promise<void>;
     updateWorkflowRun(runId: string, status: WorkflowRunStatus, outputBlobId: string | null, durationNanos: bigint | null): Promise<WorkflowRun>;
+    // Admin-only owner key management
+    setAdminAPIKey(provider: string, key: string): Promise<void>;
+    adminAPIKeyExists(provider: string): Promise<boolean>;
+    deleteAdminAPIKey(provider: string): Promise<void>;
+    getAllAdminAPIKeyProviders(): Promise<Array<string>>;
+    // GitHub OAuth Client ID (admin sets, public read)
+    setGitHubClientId(clientId: string): Promise<void>;
+    getGitHubClientId(): Promise<string>;
+    // Referral links (admin sets, public read)
+    setReferralLink(provider: string, url: string): Promise<void>;
+    getReferralLink(provider: string): Promise<string | null>;
+    getAllReferralLinks(): Promise<Array<[string, string]>>;
+    // Key resolution
+    hasEffectiveProviderKey(provider: string): Promise<boolean>;
 }

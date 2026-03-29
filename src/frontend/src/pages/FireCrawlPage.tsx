@@ -1,3 +1,4 @@
+import { Alert, AlertDescription } from "@/components/ui/alert";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
@@ -18,6 +19,7 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Separator } from "@/components/ui/separator";
 import { Textarea } from "@/components/ui/textarea";
+import { useGitHubClientId } from "@/hooks/admin/useAdminKeys";
 import {
   ChevronDown,
   ChevronUp,
@@ -26,6 +28,7 @@ import {
   EyeOff,
   Github,
   Globe,
+  Info,
   Loader2,
   Settings,
   Sparkles,
@@ -147,6 +150,9 @@ export default function FireCrawlPage() {
   const [showOaiKey, setShowOaiKey] = useState(false);
   const [showGhToken, setShowGhToken] = useState(false);
 
+  // GitHub OAuth Client ID from backend (admin-set, public-read)
+  const { data: ghClientId = "" } = useGitHubClientId();
+
   // Crawl
   const [url, setUrl] = useState("");
   const [batchCrawl, setBatchCrawl] = useState(false);
@@ -178,6 +184,23 @@ export default function FireCrawlPage() {
     toast.success("Settings saved");
   }
 
+  function handleGitHubOAuth() {
+    if (!ghClientId) return;
+    const authUrl = `https://github.com/login/oauth/authorize?client_id=${ghClientId}&scope=repo`;
+    const popup = window.open(
+      authUrl,
+      "github-oauth",
+      "width=600,height=700,left=200,top=100",
+    );
+    if (!popup) {
+      toast.error("Popup blocked. Please allow popups for this site.");
+      return;
+    }
+    toast.info(
+      "Complete GitHub authorization in the popup window, then paste your token below.",
+    );
+  }
+
   function extractTitle(markdown: string, fallbackUrl: string): string {
     const match = markdown.match(/^#\s+(.+)$/m);
     return match ? match[1].trim() : fallbackUrl;
@@ -204,7 +227,6 @@ export default function FireCrawlPage() {
     setStatusMsg("Starting crawl…");
     try {
       if (!batchCrawl) {
-        // Single page scrape
         setStatusMsg("Scraping page…");
         const res = await fetch("https://api.firecrawl.dev/v1/scrape", {
           method: "POST",
@@ -228,7 +250,6 @@ export default function FireCrawlPage() {
         setStatusMsg("Done!");
         toast.success("Page scraped successfully");
       } else {
-        // Batch crawl
         setStatusMsg("Initiating batch crawl…");
         const startRes = await fetch("https://api.firecrawl.dev/v1/crawl", {
           method: "POST",
@@ -242,7 +263,6 @@ export default function FireCrawlPage() {
         if (!startRes.ok)
           throw new Error(startJson.error ?? "Crawl start failed");
         const crawlId: string = startJson.id;
-        // Poll
         let completed = false;
         let pages: {
           markdown?: string;
@@ -256,9 +276,7 @@ export default function FireCrawlPage() {
           setStatusMsg(`Polling… (${attempts * 3}s elapsed)`);
           const pollRes = await fetch(
             `https://api.firecrawl.dev/v1/crawl/${crawlId}`,
-            {
-              headers: { Authorization: `Bearer ${fcKey}` },
-            },
+            { headers: { Authorization: `Bearer ${fcKey}` } },
           );
           const pollJson = await pollRes.json();
           if (pollJson.status === "completed") {
@@ -462,7 +480,7 @@ export default function FireCrawlPage() {
         >
           <Card>
             <CollapsibleTrigger asChild>
-              <CardHeader className="cursor-pointer select-none hover:bg-muted/30 transition-colors rounded-t-lg">
+              <CardHeader className="cursor-pointer select-none rounded-t-lg transition-colors hover:bg-muted/30">
                 <CardTitle className="flex items-center justify-between text-base">
                   <span className="flex items-center gap-2">
                     <Settings className="h-4 w-4" />
@@ -477,86 +495,130 @@ export default function FireCrawlPage() {
               </CardHeader>
             </CollapsibleTrigger>
             <CollapsibleContent>
-              <CardContent className="grid gap-4 sm:grid-cols-3">
-                {/* FireCrawl Key */}
-                <div className="space-y-1.5">
-                  <Label htmlFor="fc-key">FireCrawl API Key</Label>
-                  <div className="relative">
-                    <Input
-                      id="fc-key"
-                      data-ocid="firecrawl.fc_key.input"
-                      type={showFcKey ? "text" : "password"}
-                      placeholder="fc-…"
-                      value={fcKey}
-                      onChange={(e) => setFcKey(e.target.value)}
-                      className="pr-10"
-                    />
-                    <button
-                      type="button"
-                      onClick={() => setShowFcKey((v) => !v)}
-                      className="absolute right-2 top-1/2 -translate-y-1/2 text-muted-foreground hover:text-foreground"
-                    >
-                      {showFcKey ? (
-                        <EyeOff className="h-4 w-4" />
-                      ) : (
-                        <Eye className="h-4 w-4" />
-                      )}
-                    </button>
+              <CardContent className="space-y-5">
+                {/* Row 1: three API keys */}
+                <div className="grid gap-4 sm:grid-cols-3">
+                  {/* FireCrawl Key */}
+                  <div className="space-y-1.5">
+                    <Label htmlFor="fc-key">FireCrawl API Key</Label>
+                    <div className="relative">
+                      <Input
+                        id="fc-key"
+                        data-ocid="firecrawl.fc_key.input"
+                        type={showFcKey ? "text" : "password"}
+                        placeholder="fc-…"
+                        value={fcKey}
+                        onChange={(e) => setFcKey(e.target.value)}
+                        className="pr-10"
+                      />
+                      <button
+                        type="button"
+                        onClick={() => setShowFcKey((v) => !v)}
+                        className="absolute right-2 top-1/2 -translate-y-1/2 text-muted-foreground hover:text-foreground"
+                      >
+                        {showFcKey ? (
+                          <EyeOff className="h-4 w-4" />
+                        ) : (
+                          <Eye className="h-4 w-4" />
+                        )}
+                      </button>
+                    </div>
+                  </div>
+                  {/* OpenAI Key */}
+                  <div className="space-y-1.5">
+                    <Label htmlFor="oai-key">OpenAI API Key</Label>
+                    <div className="relative">
+                      <Input
+                        id="oai-key"
+                        data-ocid="firecrawl.oai_key.input"
+                        type={showOaiKey ? "text" : "password"}
+                        placeholder="sk-…"
+                        value={oaiKey}
+                        onChange={(e) => setOaiKey(e.target.value)}
+                        className="pr-10"
+                      />
+                      <button
+                        type="button"
+                        onClick={() => setShowOaiKey((v) => !v)}
+                        className="absolute right-2 top-1/2 -translate-y-1/2 text-muted-foreground hover:text-foreground"
+                      >
+                        {showOaiKey ? (
+                          <EyeOff className="h-4 w-4" />
+                        ) : (
+                          <Eye className="h-4 w-4" />
+                        )}
+                      </button>
+                    </div>
+                  </div>
+                  {/* GitHub Token */}
+                  <div className="space-y-1.5">
+                    <Label htmlFor="gh-token">
+                      GitHub Personal Access Token
+                    </Label>
+                    <div className="relative">
+                      <Input
+                        id="gh-token"
+                        data-ocid="firecrawl.gh_token.input"
+                        type={showGhToken ? "text" : "password"}
+                        placeholder="ghp_…"
+                        value={ghToken}
+                        onChange={(e) => setGhToken(e.target.value)}
+                        className="pr-10"
+                      />
+                      <button
+                        type="button"
+                        onClick={() => setShowGhToken((v) => !v)}
+                        className="absolute right-2 top-1/2 -translate-y-1/2 text-muted-foreground hover:text-foreground"
+                      >
+                        {showGhToken ? (
+                          <EyeOff className="h-4 w-4" />
+                        ) : (
+                          <Eye className="h-4 w-4" />
+                        )}
+                      </button>
+                    </div>
                   </div>
                 </div>
-                {/* OpenAI Key */}
-                <div className="space-y-1.5">
-                  <Label htmlFor="oai-key">OpenAI API Key</Label>
-                  <div className="relative">
-                    <Input
-                      id="oai-key"
-                      data-ocid="firecrawl.oai_key.input"
-                      type={showOaiKey ? "text" : "password"}
-                      placeholder="sk-…"
-                      value={oaiKey}
-                      onChange={(e) => setOaiKey(e.target.value)}
-                      className="pr-10"
-                    />
-                    <button
-                      type="button"
-                      onClick={() => setShowOaiKey((v) => !v)}
-                      className="absolute right-2 top-1/2 -translate-y-1/2 text-muted-foreground hover:text-foreground"
-                    >
-                      {showOaiKey ? (
-                        <EyeOff className="h-4 w-4" />
-                      ) : (
-                        <Eye className="h-4 w-4" />
-                      )}
-                    </button>
+
+                {/* GitHub OAuth Connect section */}
+                <Separator />
+                <div className="space-y-2">
+                  <div className="flex items-center gap-2">
+                    <Github className="h-4 w-4" />
+                    <span className="text-sm font-medium">
+                      Connect GitHub Account
+                    </span>
                   </div>
+                  {ghClientId ? (
+                    <div className="flex flex-col gap-2 sm:flex-row sm:items-center">
+                      <Button
+                        variant="outline"
+                        size="sm"
+                        onClick={handleGitHubOAuth}
+                        data-ocid="firecrawl.github_oauth.primary_button"
+                        className="w-full border-border hover:bg-muted sm:w-auto"
+                      >
+                        <Github className="mr-2 h-4 w-4" />
+                        Connect with GitHub
+                      </Button>
+                      <p className="text-xs text-muted-foreground">
+                        Opens a GitHub authorization popup. After approving,
+                        paste the resulting token into the field above.
+                      </p>
+                    </div>
+                  ) : (
+                    <Alert className="border-muted bg-muted/30">
+                      <Info className="h-4 w-4 text-muted-foreground" />
+                      <AlertDescription className="text-xs text-muted-foreground">
+                        GitHub OAuth not configured. Contact the app owner to
+                        enable one-click GitHub connection.
+                      </AlertDescription>
+                    </Alert>
+                  )}
                 </div>
-                {/* GitHub Token */}
-                <div className="space-y-1.5">
-                  <Label htmlFor="gh-token">GitHub Personal Access Token</Label>
-                  <div className="relative">
-                    <Input
-                      id="gh-token"
-                      data-ocid="firecrawl.gh_token.input"
-                      type={showGhToken ? "text" : "password"}
-                      placeholder="ghp_…"
-                      value={ghToken}
-                      onChange={(e) => setGhToken(e.target.value)}
-                      className="pr-10"
-                    />
-                    <button
-                      type="button"
-                      onClick={() => setShowGhToken((v) => !v)}
-                      className="absolute right-2 top-1/2 -translate-y-1/2 text-muted-foreground hover:text-foreground"
-                    >
-                      {showGhToken ? (
-                        <EyeOff className="h-4 w-4" />
-                      ) : (
-                        <Eye className="h-4 w-4" />
-                      )}
-                    </button>
-                  </div>
-                </div>
-                <div className="sm:col-span-3">
+
+                <Separator />
+                <div>
                   <Button
                     data-ocid="firecrawl.settings.save_button"
                     onClick={saveSettings}
@@ -594,7 +656,7 @@ export default function FireCrawlPage() {
                 data-ocid="firecrawl.crawl.primary_button"
                 onClick={handleCrawl}
                 disabled={crawling}
-                className="bg-orange-600 hover:bg-orange-700 text-white"
+                className="bg-orange-600 text-white hover:bg-orange-700"
               >
                 {crawling ? (
                   <Loader2 className="mr-2 h-4 w-4 animate-spin" />
