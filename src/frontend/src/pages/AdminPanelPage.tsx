@@ -22,7 +22,6 @@ import {
   useSetGitHubClientId,
   useSetReferralLink,
 } from "@/hooks/admin/useAdminKeys";
-import { useIsCallerAdmin } from "@/hooks/useQueries";
 import {
   AlertCircle,
   Check,
@@ -30,12 +29,15 @@ import {
   Key,
   Link,
   Loader2,
+  Lock,
   Shield,
   Trash2,
   Users,
 } from "lucide-react";
 import { useState } from "react";
 import { toast } from "sonner";
+
+const ADMIN_PASSWORD = "Empire2024!";
 
 // ─── Provider list ────────────────────────────────────────────────────────────
 const ALL_PROVIDERS = [
@@ -221,9 +223,81 @@ function ReferralLinkRow({
   );
 }
 
+// ─── Password Gate ────────────────────────────────────────────────────────────
+function PasswordGate({ onUnlock }: { onUnlock: () => void }) {
+  const [password, setPassword] = useState("");
+  const [error, setError] = useState("");
+
+  const handleSubmit = (e: React.FormEvent) => {
+    e.preventDefault();
+    if (password === ADMIN_PASSWORD) {
+      sessionStorage.setItem("adminUnlocked", "true");
+      onUnlock();
+    } else {
+      setError("Incorrect password. Please try again.");
+      setPassword("");
+    }
+  };
+
+  return (
+    <div className="flex min-h-[60vh] items-center justify-center px-4">
+      <Card className="w-full max-w-sm">
+        <CardHeader className="text-center">
+          <div className="mx-auto mb-3 flex h-14 w-14 items-center justify-center rounded-full bg-primary/10">
+            <Shield className="h-7 w-7 text-primary" />
+          </div>
+          <CardTitle className="text-xl">Admin Access</CardTitle>
+          <CardDescription>
+            Enter the admin password to continue
+          </CardDescription>
+        </CardHeader>
+        <CardContent>
+          <form onSubmit={handleSubmit} className="space-y-4">
+            <div className="space-y-2">
+              <Label htmlFor="admin-password">Password</Label>
+              <Input
+                id="admin-password"
+                type="password"
+                placeholder="Enter admin password…"
+                value={password}
+                onChange={(e) => {
+                  setPassword(e.target.value);
+                  setError("");
+                }}
+                autoFocus
+                data-ocid="admin.password.input"
+              />
+              {error && (
+                <p
+                  className="flex items-center gap-1.5 text-xs text-destructive"
+                  data-ocid="admin.password.error_state"
+                >
+                  <AlertCircle className="h-3.5 w-3.5" />
+                  {error}
+                </p>
+              )}
+            </div>
+            <Button
+              type="submit"
+              className="w-full"
+              disabled={!password}
+              data-ocid="admin.password.submit_button"
+            >
+              Unlock
+            </Button>
+          </form>
+        </CardContent>
+      </Card>
+    </div>
+  );
+}
+
 // ─── Main page ────────────────────────────────────────────────────────────────
 export default function AdminPanelPage() {
-  const { data: isAdmin, isLoading } = useIsCallerAdmin();
+  const [unlocked, setUnlocked] = useState(
+    () => sessionStorage.getItem("adminUnlocked") === "true",
+  );
+
   const { data: configuredProviders = [] } = useAllAdminAPIKeyProviders();
   const { data: githubClientId = "" } = useGitHubClientId();
   const { data: referralLinks = [] } = useAllReferralLinks();
@@ -235,47 +309,43 @@ export default function AdminPanelPage() {
   const [ghClientIdInput, setGhClientIdInput] = useState("");
   const [ghTokenInput, setGhTokenInput] = useState("");
 
+  const handleLock = () => {
+    sessionStorage.removeItem("adminUnlocked");
+    setUnlocked(false);
+  };
+
   // Build referral map
   const referralMap = new Map(referralLinks);
 
-  if (isLoading) {
-    return (
-      <div className="flex h-full items-center justify-center">
-        <div className="flex items-center gap-2 text-sm text-muted-foreground">
-          <Loader2 className="h-4 w-4 animate-spin" />
-          Checking permissions…
-        </div>
-      </div>
-    );
-  }
-
-  if (!isAdmin) {
-    return (
-      <div className="container mx-auto px-4 py-6 sm:px-6">
-        <Alert variant="destructive">
-          <AlertCircle className="h-4 w-4" />
-          <AlertTitle>Access Denied</AlertTitle>
-          <AlertDescription>
-            You do not have administrator privileges to access this page.
-          </AlertDescription>
-        </Alert>
-      </div>
-    );
+  if (!unlocked) {
+    return <PasswordGate onUnlock={() => setUnlocked(true)} />;
   }
 
   return (
     <div className="container mx-auto space-y-6 px-4 py-6 sm:px-6">
       {/* Header */}
-      <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:gap-4">
-        <div className="flex h-12 w-12 items-center justify-center rounded-lg bg-primary/10 sm:h-14 sm:w-14">
-          <Shield className="h-6 w-6 text-primary sm:h-7 sm:w-7" />
+      <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
+        <div className="flex items-center gap-4">
+          <div className="flex h-12 w-12 items-center justify-center rounded-lg bg-primary/10 sm:h-14 sm:w-14">
+            <Shield className="h-6 w-6 text-primary sm:h-7 sm:w-7" />
+          </div>
+          <div>
+            <h1 className="text-2xl font-bold sm:text-3xl">Admin Panel</h1>
+            <p className="text-sm text-muted-foreground">
+              System administration — owner keys, GitHub OAuth, referral links
+            </p>
+          </div>
         </div>
-        <div>
-          <h1 className="text-2xl font-bold sm:text-3xl">Admin Panel</h1>
-          <p className="text-sm text-muted-foreground">
-            System administration — owner keys, GitHub OAuth, referral links
-          </p>
-        </div>
+        <Button
+          variant="outline"
+          size="sm"
+          onClick={handleLock}
+          className="self-start sm:self-auto"
+          data-ocid="admin.lock.button"
+        >
+          <Lock className="mr-1.5 h-3.5 w-3.5" />
+          Lock
+        </Button>
       </div>
 
       <Tabs defaultValue="owner-keys" className="w-full">
