@@ -11,6 +11,7 @@ import { ThemeProvider } from "next-themes";
 import AuthGate from "./components/auth/AuthGate";
 import AppShell from "./components/layout/AppShell";
 import AdminPanelPage from "./pages/AdminPanelPage";
+import FireCrawlPage from "./pages/FireCrawlPage";
 import KeyVaultPage from "./pages/KeyVaultPage";
 import LinksDashboardPage from "./pages/LinksDashboardPage";
 import MemoryBrainPage from "./pages/MemoryBrainPage";
@@ -195,6 +196,16 @@ const linksRoute = createRoute({
   ),
 });
 
+const firecrawlRoute = createRoute({
+  getParentRoute: () => rootRoute,
+  path: "/firecrawl",
+  component: () => (
+    <AuthGate>
+      <FireCrawlPage />
+    </AuthGate>
+  ),
+});
+
 const adminRoute = createRoute({
   getParentRoute: () => rootRoute,
   path: "/admin",
@@ -228,6 +239,7 @@ const routeTree = rootRoute.addChildren([
   studioRoute,
   memoryRoute,
   linksRoute,
+  firecrawlRoute,
   adminRoute,
   termsRoute,
 ]);

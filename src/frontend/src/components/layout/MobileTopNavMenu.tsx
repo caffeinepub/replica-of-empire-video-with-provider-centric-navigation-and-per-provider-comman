@@ -7,7 +7,14 @@ import {
   SheetTrigger,
 } from "@/components/ui/sheet";
 import { Link } from "@tanstack/react-router";
-import { Brain, Key, Link as LinkIcon, Shield, Wrench } from "lucide-react";
+import {
+  Brain,
+  Globe,
+  Key,
+  Link as LinkIcon,
+  Shield,
+  Wrench,
+} from "lucide-react";
 import { Menu } from "lucide-react";
 import { useState } from "react";
 
@@ -19,6 +26,7 @@ export default function MobileTopNavMenu() {
     { to: "/studio", icon: Wrench, label: "Studio" },
     { to: "/memory", icon: Brain, label: "Memory" },
     { to: "/links", icon: LinkIcon, label: "Links" },
+    { to: "/firecrawl", icon: Globe, label: "FireCrawl" },
     { to: "/admin", icon: Shield, label: "Admin" },
   ];
 

@@ -2,6 +2,7 @@ import { Button } from "@/components/ui/button";
 import { Link } from "@tanstack/react-router";
 import {
   Brain,
+  Globe,
   Key,
   Link as LinkIcon,
   Menu as MenuIcon,
@@ -66,6 +67,12 @@ export default function TopNav({ onMobileProviderNavToggle }: TopNavProps) {
               <Link to="/links">
                 <LinkIcon className="mr-2 h-4 w-4" />
                 Links
+              </Link>
+            </Button>
+            <Button variant="ghost" size="sm" asChild>
+              <Link to="/firecrawl">
+                <Globe className="mr-2 h-4 w-4" />
+                FireCrawl
               </Link>
             </Button>
             <Button variant="ghost" size="sm" asChild>
